@@ -378,8 +378,8 @@ export default function ExpensesPage() {
                   <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -408,11 +408,11 @@ export default function ExpensesPage() {
                     <TableCell className="text-muted-foreground">
                       {formatDate(expense.date)}
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-foreground">
+                    <TableCell className="font-semibold text-foreground">
                       {formatCurrency(expense.amount)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                    <TableCell>
+                      <div className="flex justify-start gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
