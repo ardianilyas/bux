@@ -122,10 +122,10 @@ export default function DashboardLayout({
         <Sidebar className="border-r border-border">
           <SidebarHeader className="border-b border-border p-4">
             <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+              {/* <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
                 <span className="text-xl font-bold text-white">B</span>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              </div> */}
+              <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 Bux
               </span>
             </Link>
