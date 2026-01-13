@@ -143,7 +143,6 @@ const ExpenseForm = ({
       <Button
         onClick={onSubmit}
         disabled={isLoading}
-        className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
       >
         {isLoading ? "Saving..." : submitLabel}
       </Button>
@@ -307,7 +306,6 @@ export default function ExpensesPage() {
           <DialogTrigger asChild>
             <Button
               onClick={resetForm}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

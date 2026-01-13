@@ -143,7 +143,6 @@ export default function CategoriesPage() {
           <DialogTrigger asChild>
             <Button
               onClick={() => setFormData({ name: "", color: "#6366f1" })}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -206,7 +205,6 @@ export default function CategoriesPage() {
                 <Button
                   onClick={handleCreate}
                   disabled={createMutation.isPending}
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
                 >
                   {createMutation.isPending ? "Creating..." : "Create"}
                 </Button>
@@ -342,7 +340,6 @@ export default function CategoriesPage() {
               <Button
                 onClick={handleUpdate}
                 disabled={updateMutation.isPending}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white"
               >
                 {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
