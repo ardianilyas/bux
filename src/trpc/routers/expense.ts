@@ -2,18 +2,50 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../init";
 import { db } from "@/db";
 import { expenses, categories } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, ilike, gte, lte } from "drizzle-orm";
 
 export const expenseRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return db.query.expenses.findMany({
-      where: eq(expenses.userId, ctx.session.user.id),
-      orderBy: [desc(expenses.date)],
-      with: {
-        category: true,
-      },
-    });
-  }),
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          search: z.string().optional(),
+          categoryId: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const filters = [eq(expenses.userId, ctx.session.user.id)];
+
+      if (input?.search) {
+        filters.push(ilike(expenses.description, `%${input.search}%`));
+      }
+
+      if (input?.categoryId && input.categoryId !== "all") {
+        filters.push(eq(expenses.categoryId, input.categoryId));
+      }
+
+      if (input?.startDate) {
+        filters.push(gte(expenses.date, new Date(input.startDate)));
+      }
+
+      if (input?.endDate) {
+        // Set end date to end of day
+        const end = new Date(input.endDate);
+        end.setHours(23, 59, 59, 999);
+        filters.push(lte(expenses.date, end));
+      }
+
+      return db.query.expenses.findMany({
+        where: and(...filters),
+        orderBy: [desc(expenses.date)],
+        with: {
+          category: true,
+        },
+      });
+    }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

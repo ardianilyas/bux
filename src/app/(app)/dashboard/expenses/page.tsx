@@ -163,9 +163,24 @@ export default function ExpensesPage() {
     categoryId: "",
   });
 
+  const [filters, setFilters] = useState({
+    search: "",
+    categoryId: "all",
+    startDate: "",
+    endDate: "",
+  });
+
   const utils = trpc.useUtils();
   const { data: expenses, isLoading: expensesLoading } =
-    trpc.expense.list.useQuery();
+    trpc.expense.list.useQuery(
+      {
+        search: filters.search || undefined,
+        categoryId: filters.categoryId === "all" ? undefined : filters.categoryId,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+      },
+      { placeholderData: (previousData) => previousData }
+    );
   const { data: categories } = trpc.category.list.useQuery();
 
   const createMutation = trpc.expense.create.useMutation({
@@ -300,50 +315,153 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Expenses</h1>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button
-              onClick={resetForm}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (!expenses) return;
+              const csvContent = [
+                ["Date", "Description", "Category", "Amount"],
+                ...expenses.map((e) => [
+                  new Date(e.date).toLocaleDateString(),
+                  `"${e.description.replace(/"/g, '""')}"`,
+                  e.category?.name || "Uncategorized",
+                  e.amount.toFixed(2),
+                ]),
+              ]
+                .map((row) => row.join(","))
+                .join("\n");
+
+              const blob = new Blob([csvContent], { type: "text/csv" });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mr-2"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5v14" />
-              </svg>
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Expense</DialogTitle>
-            </DialogHeader>
-            <ExpenseForm
-              onSubmit={handleCreate}
-              isLoading={createMutation.isPending}
-              submitLabel="Create"
-              formData={formData}
-              setFormData={setFormData}
-              onCancel={() => {
-                setIsCreateOpen(false);
-                setEditingExpense(null);
-              }}
-              categories={categories}
-            />
-          </DialogContent>
-        </Dialog>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Export CSV
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5v14" />
+                </svg>
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Expense</DialogTitle>
+              </DialogHeader>
+              <ExpenseForm
+                onSubmit={handleCreate}
+                isLoading={createMutation.isPending}
+                submitLabel="Create"
+                formData={formData}
+                setFormData={setFormData}
+                onCancel={() => {
+                  setIsCreateOpen(false);
+                  setEditingExpense(null);
+                }}
+                categories={categories}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Search</Label>
+              <Input
+                placeholder="Search description..."
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={filters.categoryId}
+                onValueChange={(value) =>
+                  setFilters({ ...filters, categoryId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <Input
+                type="date"
+                value={filters.startDate}
+                onChange={(e) =>
+                  setFilters({ ...filters, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End Date</Label>
+              <Input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) =>
+                  setFilters({ ...filters, endDate: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {expenses?.length === 0 ? (
         <Card>

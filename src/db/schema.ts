@@ -90,6 +90,19 @@ export const expenses = pgTable("expenses", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const budgets = pgTable("budgets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  amount: real("amount").notNull(),
+  categoryId: uuid("category_id")
+    .notNull()
+    .references(() => categories.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -97,6 +110,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   categories: many(categories),
   expenses: many(expenses),
+  budgets: many(budgets),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -110,12 +124,21 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
   user: one(users, { fields: [categories.userId], references: [users.id] }),
   expenses: many(expenses),
+  budgets: many(budgets),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
   user: one(users, { fields: [expenses.userId], references: [users.id] }),
   category: one(categories, {
     fields: [expenses.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const budgetsRelations = relations(budgets, ({ one }) => ({
+  user: one(users, { fields: [budgets.userId], references: [users.id] }),
+  category: one(categories, {
+    fields: [budgets.categoryId],
     references: [categories.id],
   }),
 }));
@@ -127,3 +150,5 @@ export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
 export type Expense = typeof expenses.$inferSelect;
 export type NewExpense = typeof expenses.$inferInsert;
+export type Budget = typeof budgets.$inferSelect;
+export type NewBudget = typeof budgets.$inferInsert;

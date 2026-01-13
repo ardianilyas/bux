@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SpendingTrendsChart } from "@/components/charts/spending-trends-chart";
 import { CategoryBreakdownChart } from "@/components/charts/category-breakdown-chart";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { data: expenses, isLoading: expensesLoading } =
     trpc.expense.list.useQuery();
   const { data: categories, isLoading: categoriesLoading } =
     trpc.category.list.useQuery();
+  const { data: budgets } = trpc.budget.list.useQuery();
 
   const totalExpenses =
     expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
@@ -41,6 +43,28 @@ export default function DashboardPage() {
       day: "numeric",
       year: "numeric",
     }).format(new Date(date));
+  };
+
+  // Calculate current month spending for a category
+  const getMonthlySpending = (categoryId: string) => {
+    if (!expenses) return 0;
+    const now = new Date();
+    return expenses
+      .filter((expense) => {
+        const expenseDate = new Date(expense.date);
+        return (
+          expense.categoryId === categoryId &&
+          expenseDate.getMonth() === now.getMonth() &&
+          expenseDate.getFullYear() === now.getFullYear()
+        );
+      })
+      .reduce((sum, expense) => sum + expense.amount, 0);
+  };
+
+  const getProgressColor = (percent: number) => {
+    if (percent >= 100) return "bg-red-500";
+    if (percent >= 80) return "bg-amber-500";
+    return "bg-emerald-500";
   };
 
   if (expensesLoading || categoriesLoading) {
@@ -198,6 +222,61 @@ export default function DashboardPage() {
         <SpendingTrendsChart expenses={expenses || []} />
         <CategoryBreakdownChart expenses={expenses || []} />
       </div>
+
+      {/* Budget Overview */}
+      {budgets && budgets.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-foreground">Budget Overview</CardTitle>
+            <Link
+              href="/dashboard/budgets"
+              className="text-sm text-primary hover:underline"
+            >
+              View all →
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {budgets.slice(0, 3).map((budget) => {
+                const spent = getMonthlySpending(budget.categoryId);
+                const percent = Math.min((spent / budget.amount) * 100, 100);
+                const overBudget = spent > budget.amount;
+
+                return (
+                  <div key={budget.id} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: budget.category.color }}
+                        />
+                        <span className="text-foreground font-medium">
+                          {budget.category.name}
+                        </span>
+                      </div>
+                      <span
+                        className={
+                          overBudget
+                            ? "text-red-500 font-medium"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {formatCurrency(spent)} / {formatCurrency(budget.amount)}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${getProgressColor(percent)}`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Expenses */}
       <Card>
