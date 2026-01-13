@@ -3,6 +3,8 @@
 import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SpendingTrendsChart } from "@/components/charts/spending-trends-chart";
+import { CategoryBreakdownChart } from "@/components/charts/category-breakdown-chart";
 
 export default function DashboardPage() {
   const { data: expenses, isLoading: expensesLoading } =
@@ -55,6 +57,24 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -171,6 +191,12 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Active categories</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <SpendingTrendsChart expenses={expenses || []} />
+        <CategoryBreakdownChart expenses={expenses || []} />
       </div>
 
       {/* Recent Expenses */}
