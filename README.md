@@ -7,12 +7,16 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - 💰 **Expense Management** - Track expenses with categories, dates, and descriptions
 - 🏷️ **Category System** - Organize expenses with customizable color-coded categories
 - 📊 **Budget Tracking** - Set monthly budgets per category with visual progress indicators
-- 🔐 **Authentication** - Secure email/password authentication with Better Auth
+- � **Subscriptions** - Track recurring subscriptions with auto-expense generation
+- 🧾 **Receipt Scanning** - Upload receipts and extract expense data with AI/OCR
+- 📢 **Announcements** - Admin-managed global announcements for users
+- 👥 **User Management** - Admin dashboard for managing users and roles
+- 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
+- �🔐 **Authentication** - Secure email/password authentication with Better Auth
 - 📈 **Dashboard** - Overview of spending patterns and budget status
 - 📤 **CSV Export** - Export expense data for external analysis
 - 🎨 **Modern UI** - Beautiful, responsive interface with Shadcn UI components
 - 🌙 **Dark Mode** - Built-in theme switching
-- 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
 
 ## Tech Stack
 
@@ -35,6 +39,9 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - **Recharts** - Data visualization
 - **React Hook Form** - Form management
 - **Sonner** - Toast notifications
+- **Date-fns** - Date manipulation
+- **Tesseract.js** - OCR for receipt scanning
+- **Google Generative AI** - AI-powered expense parsing
 
 ## Project Structure
 
@@ -53,6 +60,11 @@ src/
 │   │   └── types/        # TypeScript types
 │   ├── categories/        # Category management
 │   ├── budgets/          # Budget tracking
+│   ├── subscriptions/    # Recurring subscriptions
+│   ├── receipts/         # Receipt scanning with AI/OCR
+│   ├── announcements/    # Admin announcements
+│   ├── users/            # User management
+│   ├── tickets/          # Support ticket system
 │   └── auth/             # Authentication
 ├── components/            # Shared components
 │   └── ui/               # Shadcn UI components
@@ -133,11 +145,15 @@ This project follows a **feature-based architecture** pattern inspired by [bulle
 
 ## Database Schema
 
-- **users** - User accounts
+- **users** - User accounts with roles (user/admin)
 - **sessions** - Authentication sessions
 - **categories** - Expense categories with colors
 - **expenses** - Individual expense records
 - **budgets** - Monthly budget limits per category
+- **subscriptions** - Recurring subscription tracking
+- **announcements** - Global admin announcements
+- **tickets** - Support tickets
+- **ticketMessages** - Ticket conversation messages
 
 ## Contributing
 
