@@ -23,11 +23,11 @@ export function LoginForm() {
       title="Welcome back"
       description="Enter your credentials to access your account"
       footer={
-        <p className="text-sm text-slate-400 text-center">
+        <p className="text-sm text-muted-foreground text-center">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+            className="text-primary hover:underline font-medium transition-colors"
           >
             Create one
           </Link>
@@ -37,9 +37,7 @@ export function LoginForm() {
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-200">
-              Email
-            </Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -47,13 +45,10 @@ export function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-200">
-              Password
-            </Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -61,7 +56,6 @@ export function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
           <AuthSubmitButton
