@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -11,211 +11,46 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-
-type Expense = {
-  id: string;
-  amount: number;
-  description: string;
-  date: Date;
-  categoryId: string | null;
-  category: { id: string; name: string; color: string } | null;
-};
-
-type ExpenseFormProps = {
-  onSubmit: () => void;
-  isLoading: boolean;
-  submitLabel: string;
-  formData: {
-    description: string;
-    amount: string;
-    date: string;
-    categoryId: string;
-  };
-  setFormData: (data: {
-    description: string;
-    amount: string;
-    date: string;
-    categoryId: string;
-  }) => void;
-  onCancel: () => void;
-  categories?: { id: string; name: string; color: string }[];
-};
-
-const ExpenseForm = ({
-  onSubmit,
-  isLoading,
-  submitLabel,
-  formData,
-  setFormData,
-  onCancel,
-  categories,
-}: ExpenseFormProps) => (
-  <div className="space-y-4 pt-4">
-    <div className="space-y-2">
-      <Label htmlFor="description">Description</Label>
-      <Input
-        id="description"
-        value={formData.description}
-        onChange={(e) =>
-          setFormData({ ...formData, description: e.target.value })
-        }
-        placeholder="e.g. Coffee, Groceries, Rent"
-        autoFocus
-      />
-    </div>
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <Input
-          id="amount"
-          type="number"
-          step="0.01"
-          min="0"
-          value={formData.amount}
-          onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-          placeholder="0.00"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <Input
-          id="date"
-          type="date"
-          value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-        />
-      </div>
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="category">Category</Label>
-      <Select
-        value={formData.categoryId}
-        onValueChange={(value) =>
-          setFormData({
-            ...formData,
-            categoryId: value === "none" ? "" : value,
-          })
-        }
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a category" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">No Category</SelectItem>
-          {categories?.map((category) => (
-            <SelectItem key={category.id} value={category.id}>
-              <div className="flex items-center gap-2">
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: category.color }}
-                />
-                {category.name}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-    <div className="flex justify-end gap-2 pt-4">
-      <Button variant="outline" onClick={onCancel}>
-        Cancel
-      </Button>
-      <Button
-        onClick={onSubmit}
-        disabled={isLoading}
-      >
-        {isLoading ? "Saving..." : submitLabel}
-      </Button>
-    </div>
-  </div>
-);
-
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { toast } from "sonner";
+import {
+  ExpenseForm,
+  ExpenseFiltersCard,
+  ExpenseTable,
+  useExpenses,
+  useCreateExpense,
+  useUpdateExpense,
+  useDeleteExpense,
+  type Expense,
+  type ExpenseFormData,
+  type ExpenseFilters,
+} from "@/features/expenses";
+import { useCategories } from "@/features/categories";
 
 export default function ExpensesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ExpenseFormData>({
     description: "",
     amount: "",
     date: new Date().toISOString().split("T")[0],
     categoryId: "",
   });
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ExpenseFilters>({
     search: "",
     categoryId: "all",
     startDate: "",
     endDate: "",
   });
 
-  const utils = trpc.useUtils();
-  const { data: expenses, isLoading: expensesLoading } =
-    trpc.expense.list.useQuery(
-      {
-        search: filters.search || undefined,
-        categoryId: filters.categoryId === "all" ? undefined : filters.categoryId,
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
-      },
-      { placeholderData: (previousData) => previousData }
-    );
-  const { data: categories } = trpc.category.list.useQuery();
+  const { data: expenses, isLoading: expensesLoading } = useExpenses(filters);
+  const { data: categories } = useCategories();
 
-  const createMutation = trpc.expense.create.useMutation({
-    onSuccess: () => {
-      toast.success("Expense created successfully");
-      utils.expense.list.invalidate();
-      setIsCreateOpen(false);
-      resetForm();
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create expense");
-    },
-  });
-
-  const updateMutation = trpc.expense.update.useMutation({
-    onSuccess: () => {
-      toast.success("Expense updated successfully");
-      utils.expense.list.invalidate();
-      setEditingExpense(null);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update expense");
-    },
-  });
-
-  const deleteMutation = trpc.expense.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Expense deleted successfully");
-      utils.expense.list.invalidate();
-      setDeletingId(null);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to delete expense");
-    },
-  });
+  const createMutation = useCreateExpense();
+  const updateMutation = useUpdateExpense();
+  const deleteMutation = useDeleteExpense();
 
   const resetForm = () => {
     setFormData({
@@ -235,12 +70,20 @@ export default function ExpensesPage() {
       toast.error("Valid amount is required");
       return;
     }
-    createMutation.mutate({
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      date: new Date(formData.date),
-      categoryId: formData.categoryId || undefined,
-    });
+    createMutation.mutate(
+      {
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        date: new Date(formData.date),
+        categoryId: formData.categoryId || undefined,
+      },
+      {
+        onSuccess: () => {
+          setIsCreateOpen(false);
+          resetForm();
+        },
+      }
+    );
   };
 
   const handleUpdate = () => {
@@ -253,18 +96,32 @@ export default function ExpensesPage() {
       toast.error("Valid amount is required");
       return;
     }
-    updateMutation.mutate({
-      id: editingExpense.id,
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      date: new Date(formData.date),
-      categoryId: formData.categoryId || null,
-    });
+    updateMutation.mutate(
+      {
+        id: editingExpense.id,
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        date: new Date(formData.date),
+        categoryId: formData.categoryId || null,
+      },
+      {
+        onSuccess: () => {
+          setEditingExpense(null);
+        },
+      }
+    );
   };
 
   const handleDelete = () => {
     if (deletingId) {
-      deleteMutation.mutate({ id: deletingId });
+      deleteMutation.mutate(
+        { id: deletingId },
+        {
+          onSuccess: () => {
+            setDeletingId(null);
+          },
+        }
+      );
     }
   };
 
@@ -278,19 +135,29 @@ export default function ExpensesPage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+  const handleExportCsv = () => {
+    if (!expenses) return;
+    const csvContent = [
+      ["Date", "Description", "Category", "Amount"],
+      ...expenses.map((e) => [
+        new Date(e.date).toLocaleDateString(),
+        `"${e.description.replace(/"/g, '""')}"`,
+        e.category?.name || "Uncategorized",
+        e.amount.toFixed(2),
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
 
-  const formatDate = (date: Date | string) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(date));
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   if (expensesLoading) {
@@ -318,33 +185,7 @@ export default function ExpensesPage() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Expenses</h1>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!expenses) return;
-              const csvContent = [
-                ["Date", "Description", "Category", "Amount"],
-                ...expenses.map((e) => [
-                  new Date(e.date).toLocaleDateString(),
-                  `"${e.description.replace(/"/g, '""')}"`,
-                  e.category?.name || "Uncategorized",
-                  e.amount.toFixed(2),
-                ]),
-              ]
-                .map((row) => row.join(","))
-                .join("\n");
-
-              const blob = new Blob([csvContent], { type: "text/csv" });
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            }}
-          >
+          <Button variant="outline" onClick={handleExportCsv}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -405,157 +246,18 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <Input
-                placeholder="Search description..."
-                value={filters.search}
-                onChange={(e) =>
-                  setFilters({ ...filters, search: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={filters.categoryId}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, categoryId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) =>
-                  setFilters({ ...filters, startDate: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) =>
-                  setFilters({ ...filters, endDate: e.target.value })
-                }
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ExpenseFiltersCard
+        filters={filters}
+        onFiltersChange={setFilters}
+        categories={categories}
+      />
 
-      {expenses?.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="48"
-              height="48"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-muted-foreground mb-4"
-            >
-              <line x1="12" x2="12" y1="2" y2="22" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            <p className="text-muted-foreground text-lg">No expenses yet</p>
-            <p className="text-muted-foreground text-sm mt-1">
-              Start tracking your expenses by adding your first one
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses?.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-medium text-foreground">
-                      {expense.description}
-                    </TableCell>
-                    <TableCell>
-                      {expense.category ? (
-                        <Badge
-                          variant="secondary"
-                          className="font-normal"
-                          style={{
-                            backgroundColor: `${expense.category.color}20`,
-                            color: expense.category.color,
-                            borderColor: expense.category.color,
-                          }}
-                        >
-                          {expense.category.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(expense.date)}
-                    </TableCell>
-                    <TableCell className="font-semibold text-foreground">
-                      {formatCurrency(expense.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-start gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(expense)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-600"
-                          onClick={() => setDeletingId(expense.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <ExpenseTable
+        expenses={expenses || []}
+        onEdit={openEditDialog}
+        onDelete={setDeletingId}
+        isDeleting={deleteMutation.isPending}
+      />
 
       {/* Edit Dialog */}
       <Dialog

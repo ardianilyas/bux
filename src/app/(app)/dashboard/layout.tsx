@@ -184,7 +184,7 @@ export default function DashboardLayout({
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={session?.user?.image || undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm">
+                    <AvatarFallback>
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>

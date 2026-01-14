@@ -1,7 +1,8 @@
-import { createAuthClient } from "better-auth/react";
-
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
-});
-
-export const { signIn, signUp, signOut, useSession } = authClient;
+// Re-export from auth feature for backward compatibility
+export {
+  authClient,
+  signIn,
+  signUp,
+  signOut,
+  useSession,
+} from "@/features/auth/config/auth-client";

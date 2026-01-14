@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../init";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
-import { expenses, categories } from "@/db/schema";
+import { expenses } from "@/db/schema";
 import { eq, desc, and, ilike, gte, lte } from "drizzle-orm";
 
 export const expenseRouter = createTRPCRouter({

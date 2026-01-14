@@ -1,7 +1,7 @@
 import { createTRPCRouter } from "./init";
-import { expenseRouter } from "./routers/expense";
-import { categoryRouter } from "./routers/category";
-import { budgetRouter } from "./routers/budget";
+import { expenseRouter } from "@/features/expenses/api/expense.router";
+import { categoryRouter } from "@/features/categories/api/category.router";
+import { budgetRouter } from "@/features/budgets/api/budget.router";
 
 export const appRouter = createTRPCRouter({
   expense: expenseRouter,
