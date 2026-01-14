@@ -74,10 +74,6 @@ export default function Home() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
                   className="text-foreground"
                 >
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />

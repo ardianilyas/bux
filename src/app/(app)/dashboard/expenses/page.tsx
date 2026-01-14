@@ -26,6 +26,7 @@ import {
   type ExpenseFilters,
 } from "@/features/expenses";
 import { useCategories } from "@/features/categories";
+import { ReceiptUpload } from "@/features/receipts";
 
 export default function ExpensesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -204,6 +205,7 @@ export default function ExpensesPage() {
             </svg>
             Export CSV
           </Button>
+          <ReceiptUpload />
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button onClick={resetForm}>

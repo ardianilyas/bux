@@ -2,14 +2,13 @@ import { Pool } from "pg";
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "@/db/schema";
 
-const connectionString = process.env.DATABASE_URL;
-
 // Create a lazy-initialized database connection
 let _db: NodePgDatabase<typeof schema> | null = null;
 let _pool: Pool | null = null;
 
 export const getDb = () => {
   if (!_db) {
+    const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       throw new Error(
         "DATABASE_URL is not set. Please set it in your environment variables."

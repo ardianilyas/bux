@@ -165,19 +165,29 @@ export default function DashboardLayout({
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link
-                          href={item.url}
-                          className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {item.icon}
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {menuItems
+                    .filter((item) => {
+                      if (item.title === "Categories") {
+                        // Only show Categories for admin
+                        // Check both user store and session
+                        const role = (user as any)?.role || (session?.user as any)?.role;
+                        return role === "admin";
+                      }
+                      return true;
+                    })
+                    .map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            href={item.url}
+                            className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {item.icon}
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

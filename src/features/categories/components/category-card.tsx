@@ -6,8 +6,8 @@ import type { Category } from "../types";
 
 type CategoryCardProps = {
   category: Category;
-  onEdit: (category: Category) => void;
-  onDelete: (id: string) => void;
+  onEdit?: (category: Category) => void;
+  onDelete?: (id: string) => void;
   isDeleting: boolean;
 };
 
@@ -47,18 +47,26 @@ export function CategoryCard({
       </CardHeader>
       <CardContent>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(category)}>
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-500 hover:text-red-600"
-            onClick={() => onDelete(category.id)}
-            disabled={isDeleting}
-          >
-            Delete
-          </Button>
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(category)}
+            >
+              Edit
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-500 hover:text-red-600"
+              onClick={() => onDelete(category.id)}
+              disabled={isDeleting}
+            >
+              Delete
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

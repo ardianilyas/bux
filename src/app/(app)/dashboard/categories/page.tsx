@@ -24,6 +24,7 @@ import {
   type Category,
   type CategoryFormData,
 } from "@/features/categories";
+import { useSession } from "@/lib/auth-client";
 
 export default function CategoriesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -113,45 +114,54 @@ export default function CategoriesPage() {
     );
   }
 
+  // Check role
+  const { data: session } = useSession(); // We need session here directly or via useUserStore but useSession is safer for now if store isn't fully typed with role yet
+  // We can also use useUserStore if we update the type there.
+  // For now let's use session.
+  const role = (session?.user as any)?.role;
+  const isAdmin = role === "admin";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Categories</h1>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setFormData({ name: "", color: "#6366f1" })}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5v14" />
-              </svg>
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Category</DialogTitle>
-            </DialogHeader>
-            <CategoryForm
-              onSubmit={handleCreate}
-              isLoading={createMutation.isPending}
-              submitLabel="Create"
-              formData={formData}
-              setFormData={setFormData}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {isAdmin && (
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setFormData({ name: "", color: "#6366f1" })}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5v14" />
+                </svg>
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Category</DialogTitle>
+              </DialogHeader>
+              <CategoryForm
+                onSubmit={handleCreate}
+                isLoading={createMutation.isPending}
+                submitLabel="Create"
+                formData={formData}
+                setFormData={setFormData}
+                onCancel={() => setIsCreateOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {categories?.length === 0 ? (
@@ -162,8 +172,8 @@ export default function CategoriesPage() {
             <CategoryCard
               key={category.id}
               category={category}
-              onEdit={openEditDialog}
-              onDelete={setDeletingId}
+              onEdit={isAdmin ? openEditDialog : undefined}
+              onDelete={isAdmin ? setDeletingId : undefined}
               isDeleting={deleteMutation.isPending}
             />
           ))}

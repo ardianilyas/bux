@@ -1,13 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export const categoryRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async () => {
     return db.query.categories.findMany({
-      where: eq(categories.userId, ctx.session.user.id),
       orderBy: [categories.name],
     });
   }),
@@ -15,15 +14,13 @@ export const categoryRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      // Allow fetching any category since they are shared
       return db.query.categories.findFirst({
-        where: and(
-          eq(categories.id, input.id),
-          eq(categories.userId, ctx.session.user.id)
-        ),
+        where: eq(categories.id, input.id),
       });
     }),
 
-  create: protectedProcedure
+  create: adminProcedure
     .input(
       z.object({
         name: z.string().min(1).max(50),
@@ -45,7 +42,7 @@ export const categoryRouter = createTRPCRouter({
       return category;
     }),
 
-  update: protectedProcedure
+  update: adminProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -63,24 +60,21 @@ export const categoryRouter = createTRPCRouter({
           updatedAt: new Date(),
         })
         .where(
-          and(eq(categories.id, id), eq(categories.userId, ctx.session.user.id))
+          // Ensure admin owns it or can edit it.
+          // Since all categories are effectively system/admin categories now, 
+          // allow admin to edit any category essentially, or strictly their own.
+          // For now, allow editing by ID if admin.
+          eq(categories.id, id)
         )
         .returning();
 
       return category;
     }),
 
-  delete: protectedProcedure
+  delete: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      await db
-        .delete(categories)
-        .where(
-          and(
-            eq(categories.id, input.id),
-            eq(categories.userId, ctx.session.user.id)
-          )
-        );
+      await db.delete(categories).where(eq(categories.id, input.id));
 
       return { success: true };
     }),

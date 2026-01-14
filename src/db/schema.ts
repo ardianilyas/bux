@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  role: text("role").notNull().default("user"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -79,6 +80,7 @@ export const expenses = pgTable("expenses", {
   id: uuid("id").defaultRandom().primaryKey(),
   amount: real("amount").notNull(),
   description: text("description").notNull(),
+  merchant: text("merchant"), // Added for receipt scanning
   date: timestamp("date").notNull().defaultNow(),
   categoryId: uuid("category_id").references(() => categories.id, {
     onDelete: "set null",
