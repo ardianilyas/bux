@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "@/lib/auth-client";
+import { useUserStore } from "@/store/use-user-store";
 import {
   Sidebar,
   SidebarContent,
@@ -123,15 +124,21 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
+  const user = useUserStore((state) => state.user);
+  const clearUser = useUserStore((state) => state.clearUser);
 
   const handleSignOut = async () => {
     await signOut();
+    clearUser();
     toast.success("Signed out successfully");
     router.push("/login");
     router.refresh();
   };
 
-  const userInitials = session?.user?.name
+  // Use store for display, fallback to session if store is empty
+  const displayName = user?.name || session?.user?.name || "User";
+  const displayEmail = user?.email || session?.user?.email || "";
+  const userInitials = displayName
     ?.split(" ")
     .map((n) => n[0])
     .join("")
@@ -190,10 +197,10 @@ export default function DashboardLayout({
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <span className="text-sm font-medium text-foreground">
-                      {session?.user?.name || "User"}
+                      {displayName}
                     </span>
                     <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                      {session?.user?.email}
+                      {displayEmail}
                     </span>
                   </div>
                 </Button>

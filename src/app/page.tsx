@@ -1,75 +1,98 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/features/auth";
 
 export default function Home() {
+  const { data: session } = useSession();
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      <div className="relative z-10 text-center space-y-8 max-w-3xl mx-auto">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-            <span className="text-4xl font-bold text-white">B</span>
-          </div>
-        </div>
-
-        {/* Heading */}
-        <div className="space-y-4">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent">
-              Track Your
-            </span>
-            <br />
-            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              Expenses
-            </span>
-          </h1>
-          <p className="text-xl text-slate-400 max-w-xl mx-auto">
-            Take control of your finances with Bux. Simple, beautiful, and
-            powerful expense tracking for everyone.
-          </p>
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            asChild
-            size="lg"
-          >
-            <Link href="/register">Get Started Free</Link>
-          </Button>
-        </div>
-
-        {/* Features */}
-        <div className="grid grid-cols-1 text-left md:grid-cols-3 gap-6 pt-12">
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
-            <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-indigo-400"
-              >
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
+    <div className="min-h-screen bg-white">
+      {/* Navbar */}
+      <nav className="border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-neutral-900 flex items-center justify-center">
+              <span className="text-lg font-bold text-white">B</span>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Real-time Tracking
-            </h3>
-            <p className="text-slate-500 text-sm">
-              Track your expenses as they happen with instant updates and live
-              summaries.
-            </p>
+            <span className="text-xl font-semibold text-neutral-900">Bux</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            {session?.user ? (
+              <Button asChild variant="default" size="sm">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild variant="default" size="sm">
+                <Link href="/login">Sign In</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-6 pt-20 pb-16">
+        <div className="max-w-3xl">
+          <h1 className="text-6xl md:text-7xl font-bold text-neutral-900 tracking-tight mb-6">
+            Expense tracking,
+            <br />
+            simplified.
+          </h1>
+          <p className="text-xl text-neutral-600 mb-8 max-w-2xl">
+            Take control of your finances with Bux. Track expenses, set budgets,
+            and gain insights into your spending habits.
+          </p>
+          <div className="flex items-center gap-4">
+            <Button asChild size="lg">
+              <Link href="/register">Get Started Free</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Bento Grid Features */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Feature 1 - Large */}
+          <div className="md:col-span-2 lg:col-span-2 border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 transition-colors">
+            <div className="flex flex-col h-full">
+              <div className="h-12 w-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-6">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-neutral-900"
+                >
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold text-neutral-900 mb-3">
+                Real-time Tracking
+              </h3>
+              <p className="text-neutral-600 text-lg mb-6">
+                Track your expenses as they happen with instant updates and live
+                summaries. Never lose sight of your spending.
+              </p>
+              <div className="mt-auto pt-4">
+                <div className="h-32 rounded-xl bg-gradient-to-br from-neutral-50 to-neutral-100 border border-neutral-200" />
+              </div>
+            </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
-            <div className="h-12 w-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+          {/* Feature 2 - Small */}
+          <div className="border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 transition-colors">
+            <div className="h-12 w-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-6">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -80,23 +103,23 @@ export default function Home() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-purple-400"
+                className="text-neutral-900"
               >
                 <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
                 <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              Smart Categories
+            <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+              Categories
             </h3>
-            <p className="text-slate-500 text-sm">
-              Organize your expenses with custom categories and color-coded
-              labels.
+            <p className="text-neutral-600">
+              Organize expenses with custom categories and color-coded labels.
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4">
+          {/* Feature 3 - Small */}
+          <div className="border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 transition-colors">
+            <div className="h-12 w-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-6">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -107,22 +130,94 @@ export default function Home() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-emerald-400"
+                className="text-neutral-900"
+              >
+                <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z" />
+                <path d="M2 9v1c0 1.1.9 2 2 2h1" />
+                <path d="M16 11h0" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+              Budget Control
+            </h3>
+            <p className="text-neutral-600">
+              Set monthly budgets and get alerts when you're approaching limits.
+            </p>
+          </div>
+
+          {/* Feature 4 - Medium */}
+          <div className="md:col-span-2 lg:col-span-2 border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 transition-colors">
+            <div className="h-12 w-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-neutral-900"
+              >
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                <path d="m19 9-5 5-4-4-3 3" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-semibold text-neutral-900 mb-3">
+              Visual Insights
+            </h3>
+            <p className="text-neutral-600 text-lg">
+              Beautiful charts and graphs help you understand your spending patterns
+              at a glance.
+            </p>
+          </div>
+
+          {/* Feature 5 - Small */}
+          <div className="border border-neutral-200 rounded-2xl p-8 hover:border-neutral-300 transition-colors">
+            <div className="h-12 w-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-neutral-900"
               >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
                 <path d="m9 12 2 2 4-4" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-neutral-900 mb-3">
               Secure & Private
             </h3>
-            <p className="text-slate-500 text-sm">
-              Your financial data is encrypted and private. Only you have
-              access.
+            <p className="text-neutral-600">
+              Your financial data is encrypted and private. Only you have access.
             </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-200 mt-24">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-neutral-900 flex items-center justify-center">
+                <span className="text-lg font-bold text-white">B</span>
+              </div>
+              <span className="text-xl font-semibold text-neutral-900">Bux</span>
+            </div>
+            <p className="text-neutral-600 text-sm">
+              © 2026 Bux. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

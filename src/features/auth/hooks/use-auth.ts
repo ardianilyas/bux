@@ -5,12 +5,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { signIn, signUp, signOut, useSession } from "../config/auth-client";
 import type { LoginCredentials, RegisterCredentials } from "../types";
+import { useUserStore } from "@/store/use-user-store";
 
 export { useSession };
 
 export function useLogin() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const setUser = useUserStore((state) => state.setUser);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -24,6 +26,14 @@ export function useLogin() {
       if (result.error) {
         toast.error(result.error.message || "Failed to sign in");
         return { error: result.error };
+      }
+
+      // Store user details in Zustand
+      if (result.data?.user) {
+        setUser({
+          email: result.data.user.email,
+          name: result.data.user.name || "",
+        });
       }
 
       toast.success("Welcome back!");
@@ -44,6 +54,7 @@ export function useLogin() {
 export function useRegister() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const setUser = useUserStore((state) => state.setUser);
 
   const register = async (credentials: RegisterCredentials) => {
     setIsLoading(true);
@@ -58,6 +69,14 @@ export function useRegister() {
       if (result.error) {
         toast.error(result.error.message || "Failed to create account");
         return { error: result.error };
+      }
+
+      // Store user details in Zustand
+      if (result.data?.user) {
+        setUser({
+          email: result.data.user.email,
+          name: result.data.user.name || "",
+        });
       }
 
       toast.success("Account created successfully!");
@@ -78,12 +97,14 @@ export function useRegister() {
 export function useLogout() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const clearUser = useUserStore((state) => state.clearUser);
 
   const logout = async () => {
     setIsLoading(true);
 
     try {
       await signOut();
+      clearUser(); // Clear user store on logout
       toast.success("Logged out successfully");
       router.push("/login");
       router.refresh();
