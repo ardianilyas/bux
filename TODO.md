@@ -1,6 +1,8 @@
 # Project Roadmap & TODOs
 
 ## 🚨 High Priority
+- [ ] **Refactor Code**: Refactor all code on page.tsx that used "use client" to server components
+- [ ] **Announcements**: Refactor announcements to be feature based
 - [ ] **Form Validation**: Enhance client-side form validation across all forms (Login, Register, Create Expense, Create Ticket) to provide better user feedback.
 - [ ] **Error Handling**: Implement global error boundaries and better toast notifications for server errors.
 
