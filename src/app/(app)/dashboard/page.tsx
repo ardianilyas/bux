@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SpendingTrendsChart } from "@/components/charts/spending-trends-chart";
 import { CategoryBreakdownChart } from "@/components/charts/category-breakdown-chart";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { data: expenses, isLoading: expensesLoading } =
@@ -30,12 +31,7 @@ export default function DashboardPage() {
 
   const recentExpenses = expenses?.slice(0, 5) || [];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
+
 
   const formatDate = (date: Date | string) => {
     return new Intl.DateTimeFormat("en-US", {

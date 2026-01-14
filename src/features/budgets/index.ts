@@ -21,4 +21,4 @@ export type {
   CreateBudgetInput,
   UpdateBudgetInput,
 } from "./types";
-export { getProgressColor, formatCurrency } from "./types";
+export { getProgressColor } from "./types";

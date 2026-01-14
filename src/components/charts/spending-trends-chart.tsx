@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
 
 interface SpendingTrendsChartProps {
   expenses: {
@@ -55,14 +56,7 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
 
   const data = getMonthlyData();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+
 
   return (
     <Card>

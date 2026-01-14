@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Budget } from "../types";
-import { getProgressColor, formatCurrency } from "../types";
+import { getProgressColor } from "../types";
+import { formatCurrency } from "@/lib/utils";
 
 type BudgetCardProps = {
   budget: Budget;

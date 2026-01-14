@@ -36,9 +36,4 @@ export function getProgressColor(percent: number): string {
   return "bg-emerald-500";
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
+

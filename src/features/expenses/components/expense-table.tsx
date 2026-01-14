@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { Expense } from "../types";
+import { formatCurrency } from "@/lib/utils";
 
 type ExpenseTableProps = {
   expenses: Expense[];
@@ -20,12 +21,7 @@ type ExpenseTableProps = {
   isDeleting: boolean;
 };
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
+
 
 function formatDate(date: Date | string) {
   return new Intl.DateTimeFormat("en-US", {
