@@ -87,7 +87,7 @@ export default function Home() {
                 summaries. Never lose sight of your spending.
               </p>
               <div className="mt-auto pt-4">
-                <div className="h-32 rounded-xl bg-gradient-to-br from-muted/50 to-muted border border-border" />
+                <div className="h-32 rounded-xl bg-linear-to-br from-muted/50 to-muted border border-border" />
               </div>
             </div>
           </div>
