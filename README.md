@@ -12,6 +12,7 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - 📤 **CSV Export** - Export expense data for external analysis
 - 🎨 **Modern UI** - Beautiful, responsive interface with Shadcn UI components
 - 🌙 **Dark Mode** - Built-in theme switching
+- 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
 
 ## Tech Stack
 
