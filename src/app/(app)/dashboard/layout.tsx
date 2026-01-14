@@ -180,6 +180,19 @@ const menuItems = [
   },
 ];
 
+const userMenuItems = [
+  menuItems.find(m => m.title === "Dashboard")!,
+  menuItems.find(m => m.title === "Expenses")!,
+  menuItems.find(m => m.title === "Budgets")!,
+  menuItems.find(m => m.title === "Subscriptions")!,
+];
+
+const adminMenuItems = [
+  menuItems.find(m => m.title === "Categories")!,
+  menuItems.find(m => m.title === "User Management")!,
+  menuItems.find(m => m.title === "Announcements")!,
+];
+
 export default function DashboardLayout({
   children,
 }: {
@@ -198,6 +211,9 @@ export default function DashboardLayout({
     router.refresh();
   };
 
+  const role = (user as any)?.role || (session?.user as any)?.role;
+  const isAdmin = role === "admin";
+
   // Use store for display, fallback to session if store is empty
   const displayName = user?.name || session?.user?.name || "User";
   const displayEmail = user?.email || session?.user?.email || "";
@@ -213,46 +229,61 @@ export default function DashboardLayout({
         <Sidebar className="border-r border-border">
           <SidebarHeader className="border-b border-border p-4">
             <Link href="/dashboard" className="flex items-center gap-3">
-              {/* <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                <span className="text-xl font-bold text-white">B</span>
-              </div> */}
               <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
                 Bux
               </span>
             </Link>
           </SidebarHeader>
           <SidebarContent>
+            {/* User Menu Section */}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-muted-foreground uppercase text-xs tracking-wider">
-                Menu
+              <SidebarGroupLabel className="text-muted-foreground uppercase text-[10px] font-semibold tracking-wider px-4 py-2">
+                General
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {menuItems
-                    .filter((item) => {
-                      if (item.title === "Categories" || item.title === "User Management" || item.title === "Announcements") {
-                        // Only show admin items for admin users
-                        const role = (user as any)?.role || (session?.user as any)?.role;
-                        return role === "admin";
-                      }
-                      return true;
-                    })
-                    .map((item) => (
+                  {userMenuItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <Link
+                          href={item.url}
+                          className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors px-4"
+                        >
+                          {item.icon}
+                          <span className="font-medium">{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Admin Menu Section */}
+            {isAdmin && (
+              <SidebarGroup className="mt-4">
+                <SidebarGroupLabel className="text-muted-foreground uppercase text-[10px] font-semibold tracking-wider px-4 py-2">
+                  Administration
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {adminMenuItems.map((item) => (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild>
                           <Link
                             href={item.url}
-                            className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors"
+                            className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors px-4"
                           >
                             {item.icon}
-                            <span>{item.title}</span>
+                            <span className="font-medium">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
           </SidebarContent>
           <SidebarFooter className="border-t border-border p-4">
             <DropdownMenu>
