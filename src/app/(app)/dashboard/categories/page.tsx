@@ -36,10 +36,14 @@ export default function CategoriesPage() {
   });
 
   const { data: categories, isLoading } = useCategories();
+  const { data: session } = useSession(); // Move this up
 
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
+
+  const role = (session?.user as any)?.role;
+  const isAdmin = role === "admin";
 
   const handleCreate = () => {
     if (!formData.name.trim()) {
@@ -114,12 +118,8 @@ export default function CategoriesPage() {
     );
   }
 
-  // Check role
-  const { data: session } = useSession(); // We need session here directly or via useUserStore but useSession is safer for now if store isn't fully typed with role yet
-  // We can also use useUserStore if we update the type there.
-  // For now let's use session.
-  const role = (session?.user as any)?.role;
-  const isAdmin = role === "admin";
+  // Check role logic moved up
+
 
   return (
     <div className="space-y-6">

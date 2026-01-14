@@ -178,6 +178,49 @@ const menuItems = [
       </svg>
     ),
   },
+  {
+    title: "Support",
+    url: "/dashboard/support",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
+      </svg>
+    ),
+  },
+  {
+    title: "Tickets",
+    url: "/dashboard/admin/tickets",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+        <path d="M13 5v2" />
+        <path d="M13 17v2" />
+        <path d="M13 11v2" />
+      </svg>
+    ),
+  },
 ];
 
 const userMenuItems = [
@@ -185,12 +228,14 @@ const userMenuItems = [
   menuItems.find(m => m.title === "Expenses")!,
   menuItems.find(m => m.title === "Budgets")!,
   menuItems.find(m => m.title === "Subscriptions")!,
+  menuItems.find(m => m.title === "Support")!,
 ];
 
 const adminMenuItems = [
   menuItems.find(m => m.title === "Categories")!,
   menuItems.find(m => m.title === "User Management")!,
   menuItems.find(m => m.title === "Announcements")!,
+  menuItems.find(m => m.title === "Tickets")!,
 ];
 
 export default function DashboardLayout({

@@ -6,6 +6,7 @@ import { receiptRouter } from "@/features/receipts/api/receipt.router";
 import { userRouter } from "@/features/users/api/user.router";
 import { announcementRouter } from "@/features/announcements/api/announcement.router";
 import { subscriptionRouter } from "@/features/subscriptions/api/subscription.router";
+import { ticketRouter } from "@/features/tickets/api/ticket.router";
 
 export const appRouter = createTRPCRouter({
   expense: expenseRouter,
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   announcement: announcementRouter,
   subscription: subscriptionRouter,
+  ticket: ticketRouter,
 });
 
 export type AppRouter = typeof appRouter;

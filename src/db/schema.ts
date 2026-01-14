@@ -141,6 +141,36 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const tickets = pgTable("tickets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  subject: text("subject").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  category: text("category").notNull().default("general"), // bug, feature, account, billing, general
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  assignedToId: text("assigned_to_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const ticketMessages = pgTable("ticket_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ticketId: uuid("ticket_id")
+    .notNull()
+    .references(() => tickets.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -150,6 +180,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   expenses: many(expenses),
   budgets: many(budgets),
   subscriptions: many(subscriptions),
+  tickets: many(tickets),
+  ticketMessages: many(ticketMessages),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -196,6 +228,26 @@ export const subscriptionsRelations = relations(subscriptions, ({ one, many }) =
   expenses: many(expenses),
 }));
 
+export const ticketsRelations = relations(tickets, ({ one, many }) => ({
+  user: one(users, { fields: [tickets.userId], references: [users.id] }),
+  assignedTo: one(users, {
+    fields: [tickets.assignedToId],
+    references: [users.id],
+  }),
+  messages: many(ticketMessages),
+}));
+
+export const ticketMessagesRelations = relations(ticketMessages, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [ticketMessages.ticketId],
+    references: [tickets.id],
+  }),
+  user: one(users, {
+    fields: [ticketMessages.userId],
+    references: [users.id],
+  }),
+}));
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -209,3 +261,7 @@ export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type NewTicket = typeof tickets.$inferInsert;
+export type TicketMessage = typeof ticketMessages.$inferSelect;
+export type NewTicketMessage = typeof ticketMessages.$inferInsert;
