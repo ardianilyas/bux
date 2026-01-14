@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, expenses } from "@/db/schema";
 import { eq, desc, and, lte, gte } from "drizzle-orm";
 
 export const subscriptionRouter = createTRPCRouter({
@@ -26,22 +26,37 @@ export const subscriptionRouter = createTRPCRouter({
         nextBillingDate: z.date(),
         categoryId: z.string().uuid().optional(),
         isActive: z.boolean().default(true),
+        createExpense: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const [subscription] = await db
-        .insert(subscriptions)
-        .values({
-          name: input.name,
-          amount: input.amount,
-          billingCycle: input.billingCycle,
-          nextBillingDate: input.nextBillingDate,
-          categoryId: input.categoryId,
-          userId: ctx.session.user.id,
-          isActive: input.isActive,
-        })
-        .returning();
-      return subscription;
+      return await db.transaction(async (tx) => {
+        const [subscription] = await tx
+          .insert(subscriptions)
+          .values({
+            name: input.name,
+            amount: input.amount,
+            billingCycle: input.billingCycle,
+            nextBillingDate: input.nextBillingDate,
+            categoryId: input.categoryId,
+            userId: ctx.session.user.id,
+            isActive: input.isActive,
+          })
+          .returning();
+
+        if (input.createExpense) {
+          await tx.insert(expenses).values({
+            amount: input.amount,
+            description: `Subscription: ${input.name}`,
+            date: new Date(),
+            categoryId: input.categoryId,
+            userId: ctx.session.user.id,
+            subscriptionId: subscription.id,
+          });
+        }
+
+        return subscription;
+      });
     }),
 
   // Update subscription

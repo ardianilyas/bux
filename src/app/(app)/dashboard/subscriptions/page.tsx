@@ -9,12 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -25,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { Pencil, Trash2 } from "lucide-react";
 
 type BillingCycle = "weekly" | "monthly" | "yearly";
 
@@ -35,6 +39,20 @@ export default function SubscriptionsPage() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [nextBillingDate, setNextBillingDate] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>();
+  const [createExpense, setCreateExpense] = useState(false);
+
+  // Edit State
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editBillingCycle, setEditBillingCycle] = useState<BillingCycle>("monthly");
+  const [editNextBillingDate, setEditNextBillingDate] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState<string | undefined>();
+
+  // Delete State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: subscriptions, isLoading } = trpc.subscription.list.useQuery();
   const { data: categories } = trpc.category.list.useQuery();
@@ -44,6 +62,10 @@ export default function SubscriptionsPage() {
     onSuccess: () => {
       toast.success("Subscription added");
       utils.subscription.list.invalidate();
+      // Also invalidate expenses if we created one
+      if (createExpense) {
+        utils.expense.list.invalidate();
+      }
       setIsOpen(false);
       resetForm();
     },
@@ -52,9 +74,20 @@ export default function SubscriptionsPage() {
     },
   });
 
-  const toggleMutation = trpc.subscription.update.useMutation({
+  const updateMutation = trpc.subscription.update.useMutation({
     onSuccess: () => {
       toast.success("Subscription updated");
+      utils.subscription.list.invalidate();
+      setEditOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const toggleMutation = trpc.subscription.update.useMutation({
+    onSuccess: () => {
+      toast.success("Status updated");
       utils.subscription.list.invalidate();
     },
   });
@@ -63,6 +96,10 @@ export default function SubscriptionsPage() {
     onSuccess: () => {
       toast.success("Subscription deleted");
       utils.subscription.list.invalidate();
+      setDeleteOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -72,6 +109,7 @@ export default function SubscriptionsPage() {
     setBillingCycle("monthly");
     setNextBillingDate("");
     setCategoryId(undefined);
+    setCreateExpense(false);
   };
 
   const handleCreate = () => {
@@ -85,7 +123,40 @@ export default function SubscriptionsPage() {
       billingCycle,
       nextBillingDate: new Date(nextBillingDate),
       categoryId,
+      createExpense,
     });
+  };
+
+  const handleEditOpen = (sub: any) => {
+    setEditingId(sub.id);
+    setEditName(sub.name);
+    setEditAmount(sub.amount.toString());
+    setEditBillingCycle(sub.billingCycle);
+    setEditNextBillingDate(new Date(sub.nextBillingDate).toISOString().split('T')[0]);
+    setEditCategoryId(sub.categoryId || undefined);
+    setEditOpen(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editingId || !editName || !editAmount || !editNextBillingDate) return;
+    updateMutation.mutate({
+      id: editingId,
+      name: editName,
+      amount: parseFloat(editAmount),
+      billingCycle: editBillingCycle,
+      nextBillingDate: new Date(editNextBillingDate),
+      categoryId: editCategoryId,
+    });
+  };
+
+  const handleDeleteOpen = (id: string) => {
+    setDeletingId(id);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingId) return;
+    deleteMutation.mutate({ id: deletingId });
   };
 
   const getCycleLabel = (cycle: string) => {
@@ -205,6 +276,18 @@ export default function SubscriptionsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="createExpense"
+                  checked={createExpense}
+                  onCheckedChange={(checked) => setCreateExpense(checked as boolean)}
+                />
+                <Label htmlFor="createExpense" className="font-normal cursor-pointer">
+                  Log this payment as an expense now
+                </Label>
+              </div>
+
               <Button
                 className="w-full"
                 onClick={handleCreate}
@@ -262,20 +345,130 @@ export default function SubscriptionsPage() {
                     </Badge>
                   </div>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-red-500 hover:text-red-600"
-                  onClick={() => deleteMutation.mutate({ id: subscription.id })}
-                  disabled={deleteMutation.isPending}
-                >
-                  Delete
-                </Button>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleEditOpen(subscription)}
+                  >
+                    <Pencil className="mr-2 h-3 w-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    onClick={() => handleDeleteOpen(subscription.id)}
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    Delete
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Subscription</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-amount">Amount</Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                step="0.01"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Billing Cycle</Label>
+              <Select value={editBillingCycle} onValueChange={(v) => setEditBillingCycle(v as BillingCycle)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-nextBilling">Next Billing Date</Label>
+              <Input
+                id="edit-nextBilling"
+                type="date"
+                value={editNextBillingDate}
+                onChange={(e) => setEditNextBillingDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Category (optional)</Label>
+              <Select value={editCategoryId || "none"} onValueChange={(v) => setEditCategoryId(v === "none" ? undefined : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Category</SelectItem>
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleUpdate}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "Updating..." : "Update Subscription"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Subscription</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this subscription? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

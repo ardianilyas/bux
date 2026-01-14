@@ -86,6 +86,9 @@ export const expenses = pgTable("expenses", {
   categoryId: uuid("category_id").references(() => categories.id, {
     onDelete: "set null",
   }),
+  subscriptionId: uuid("subscription_id").references(() => subscriptions.id, {
+    onDelete: "set null",
+  }),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -170,6 +173,10 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
     fields: [expenses.categoryId],
     references: [categories.id],
   }),
+  subscription: one(subscriptions, {
+    fields: [expenses.subscriptionId],
+    references: [subscriptions.id],
+  }),
 }));
 
 export const budgetsRelations = relations(budgets, ({ one }) => ({
@@ -180,12 +187,13 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
   }),
 }));
 
-export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
   user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
   category: one(categories, {
     fields: [subscriptions.categoryId],
     references: [categories.id],
   }),
+  expenses: many(expenses),
 }));
 
 // Type exports for use in application
