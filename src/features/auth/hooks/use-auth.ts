@@ -41,6 +41,14 @@ export function useLogin() {
       // Clear all cached queries to force fresh data for new user
       queryClient.clear();
 
+      // Check user status and redirect accordingly
+      const userStatus = (result.data?.user as any)?.status;
+      if (userStatus === "banned" || userStatus === "suspended") {
+        router.push("/account-status");
+        router.refresh();
+        return { error: null };
+      }
+
       toast.success("Welcome back!");
       router.push("/dashboard");
       router.refresh();

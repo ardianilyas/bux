@@ -24,6 +24,24 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session?.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
+
+  // Check user status (type assertion needed since better-auth session doesn't include custom fields by default)
+  const userStatus = (ctx.session.user as any)?.status;
+
+  if (userStatus === "banned") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Your account has been banned. Please contact support."
+    });
+  }
+
+  if (userStatus === "suspended") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Your account has been suspended. Please contact support."
+    });
+  }
+
   return next({
     ctx: {
       session: ctx.session,
