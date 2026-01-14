@@ -121,6 +121,23 @@ export const announcements = pgTable("announcements", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  amount: real("amount").notNull(),
+  billingCycle: text("billing_cycle").notNull().default("monthly"), // weekly, monthly, yearly
+  nextBillingDate: timestamp("next_billing_date").notNull(),
+  categoryId: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -129,6 +146,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   categories: many(categories),
   expenses: many(expenses),
   budgets: many(budgets),
+  subscriptions: many(subscriptions),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -143,6 +161,7 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   user: one(users, { fields: [categories.userId], references: [users.id] }),
   expenses: many(expenses),
   budgets: many(budgets),
+  subscriptions: many(subscriptions),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
@@ -161,6 +180,14 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
   }),
 }));
 
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, { fields: [subscriptions.userId], references: [users.id] }),
+  category: one(categories, {
+    fields: [subscriptions.categoryId],
+    references: [categories.id],
+  }),
+}));
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -172,3 +199,5 @@ export type Budget = typeof budgets.$inferSelect;
 export type NewBudget = typeof budgets.$inferInsert;
 export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
