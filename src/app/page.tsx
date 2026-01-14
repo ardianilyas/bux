@@ -35,22 +35,13 @@ export default function Home() {
           <Button
             asChild
             size="lg"
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium shadow-lg shadow-indigo-500/25 text-lg px-8"
           >
             <Link href="/register">Get Started Free</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white text-lg px-8"
-          >
-            <Link href="/login">Sign In</Link>
           </Button>
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
+        <div className="grid grid-cols-1 text-left md:grid-cols-3 gap-6 pt-12">
           <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
             <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
               <svg
