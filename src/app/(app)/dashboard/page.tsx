@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SpendingTrendsChart } from "@/components/charts/spending-trends-chart";
 import { CategoryBreakdownChart } from "@/components/charts/category-breakdown-chart";
+import { AnnouncementBanner } from "@/features/announcements";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
@@ -110,6 +111,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Announcements */}
+      <AnnouncementBanner />
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="hover:border-indigo-500/50 transition-colors">

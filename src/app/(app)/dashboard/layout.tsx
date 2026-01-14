@@ -137,6 +137,26 @@ const menuItems = [
       </svg>
     ),
   },
+  {
+    title: "Announcements",
+    url: "/dashboard/admin/announcements",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m3 11 18-5v12L3 14v-3z" />
+        <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+      </svg>
+    ),
+  },
 ];
 
 export default function DashboardLayout({
@@ -189,9 +209,8 @@ export default function DashboardLayout({
                 <SidebarMenu>
                   {menuItems
                     .filter((item) => {
-                      if (item.title === "Categories" || item.title === "User Management") {
-                        // Only show Categories and User Management for admin
-                        // Check both user store and session
+                      if (item.title === "Categories" || item.title === "User Management" || item.title === "Announcements") {
+                        // Only show admin items for admin users
                         const role = (user as any)?.role || (session?.user as any)?.role;
                         return role === "admin";
                       }

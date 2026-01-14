@@ -106,6 +106,21 @@ export const budgets = pgTable("budgets", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const announcements = pgTable("announcements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("info"), // info, success, warning, critical
+  isActive: boolean("is_active").notNull().default(true),
+  startsAt: timestamp("starts_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -155,3 +170,5 @@ export type Expense = typeof expenses.$inferSelect;
 export type NewExpense = typeof expenses.$inferInsert;
 export type Budget = typeof budgets.$inferSelect;
 export type NewBudget = typeof budgets.$inferInsert;
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;
