@@ -31,7 +31,15 @@ export default function DashboardPage() {
 
   const recentExpenses = expenses?.slice(0, 5) || [];
 
-
+  // Filter expenses for current month for category breakdown
+  const currentMonthExpenses = expenses?.filter((expense) => {
+    const expenseDate = new Date(expense.date);
+    const now = new Date();
+    return (
+      expenseDate.getMonth() === now.getMonth() &&
+      expenseDate.getFullYear() === now.getFullYear()
+    );
+  }) || [];
 
   const formatDate = (date: Date | string) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -216,7 +224,7 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <SpendingTrendsChart expenses={expenses || []} />
-        <CategoryBreakdownChart expenses={expenses || []} />
+        <CategoryBreakdownChart expenses={currentMonthExpenses} />
       </div>
 
       {/* Budget Overview */}

@@ -100,7 +100,7 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
       <CardHeader>
         <CardTitle className="text-foreground">Category Breakdown</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Spending distribution by category
+          This month's spending by category
         </p>
       </CardHeader>
       <CardContent>

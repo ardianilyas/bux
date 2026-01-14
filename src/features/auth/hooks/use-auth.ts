@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { signIn, signUp, signOut, useSession } from "../config/auth-client";
 import type { LoginCredentials, RegisterCredentials } from "../types";
 import { useUserStore } from "@/store/use-user-store";
+import { useQueryClient } from "@tanstack/react-query";
 
 export { useSession };
 
@@ -13,6 +14,7 @@ export function useLogin() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const setUser = useUserStore((state) => state.setUser);
+  const queryClient = useQueryClient();
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -36,6 +38,9 @@ export function useLogin() {
         });
       }
 
+      // Clear all cached queries to force fresh data for new user
+      queryClient.clear();
+
       toast.success("Welcome back!");
       router.push("/dashboard");
       router.refresh();
@@ -55,6 +60,7 @@ export function useRegister() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const setUser = useUserStore((state) => state.setUser);
+  const queryClient = useQueryClient();
 
   const register = async (credentials: RegisterCredentials) => {
     setIsLoading(true);
@@ -79,6 +85,9 @@ export function useRegister() {
         });
       }
 
+      // Clear all cached queries to force fresh data for new user
+      queryClient.clear();
+
       toast.success("Account created successfully!");
       router.push("/dashboard");
       router.refresh();
@@ -98,12 +107,14 @@ export function useLogout() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const clearUser = useUserStore((state) => state.clearUser);
+  const queryClient = useQueryClient();
 
   const logout = async () => {
     setIsLoading(true);
 
     try {
       await signOut();
+      queryClient.clear(); // Clear all React Query cache
       clearUser(); // Clear user store on logout
       toast.success("Logged out successfully");
       router.push("/login");
