@@ -7,14 +7,15 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - 💰 **Expense Management** - Track expenses with categories, dates, and descriptions
 - 🏷️ **Category System** - Organize expenses with customizable color-coded categories
 - 📊 **Budget Tracking** - Set monthly budgets per category with visual progress indicators
-- � **Subscriptions** - Track recurring subscriptions with auto-expense generation
+- 🔄 **Subscriptions** - Track recurring subscriptions with auto-expense generation
 - 🧾 **Receipt Scanning** - Upload receipts and extract expense data with AI/OCR
 - 📢 **Announcements** - Admin-managed global announcements for users
 - 👥 **User Management** - Admin dashboard for managing users and roles
 - 🌍 **Multi-currency Support** - Set base currency, track expenses in any currency with real-time exchange rates
 - 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
-- �🔐 **Authentication** - Secure email/password authentication with Better Auth
-- 📈 **Dashboard** - Overview of spending patterns and budget status
+- � **Admin Analytics Dashboard** - Visual charts for user growth, expense volume, and system stats
+- 📋 **Audit Logs** - Comprehensive security audit trail with IP address and user agent tracking
+- � **Authentication** - Secure email/password authentication with Better Auth
 - 📤 **CSV Export** - Export expense data for external analysis
 - 🎨 **Modern UI** - Beautiful, responsive interface with Shadcn UI components
 - 🌙 **Dark Mode** - Built-in theme switching
@@ -69,11 +70,13 @@ src/
 │   ├── announcements/    # Admin announcements
 │   ├── users/            # User management
 │   ├── tickets/          # Support ticket system
+│   ├── analytics/        # Admin analytics dashboard
+│   ├── audit/            # Audit logs and security tracking
 │   └── auth/             # Authentication
 ├── components/            # Shared components
 │   └── ui/               # Shadcn UI components
 ├── db/                    # Database schema and config
-├── lib/                   # Shared utilities (currency, validation, etc.)
+├── lib/                   # Shared utilities (currency, validation, audit-logger, etc.)
 └── trpc/                  # tRPC configuration
 ```
 
@@ -158,6 +161,7 @@ This project follows a **feature-based architecture** pattern inspired by [bulle
 - **announcements** - Global admin announcements
 - **tickets** - Support tickets
 - **ticketMessages** - Ticket conversation messages
+- **auditLogs** - Security audit trail with IP address and user agent tracking
 
 ## Contributing
 
