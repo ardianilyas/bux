@@ -4,6 +4,8 @@
 export { ExpenseForm } from "./components/expense-form";
 export { ExpenseFiltersCard } from "./components/expense-filters";
 export { ExpenseTable } from "./components/expense-table";
+export { DashboardView } from "./components/dashboard-view";
+export { ExpensesView } from "./components/expenses-view";
 
 // Hooks
 export {

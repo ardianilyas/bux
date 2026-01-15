@@ -3,6 +3,7 @@
 // Components
 export { CategoryForm } from "./components/category-form";
 export { CategoryCard, CategoryEmptyState } from "./components/category-card";
+export { CategoriesView } from "./components/categories-view";
 
 // Hooks
 export {

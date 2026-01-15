@@ -3,6 +3,7 @@
 // Components
 export { BudgetForm } from "./components/budget-form";
 export { BudgetCard, BudgetEmptyState } from "./components/budget-card";
+export { BudgetsView } from "./components/budgets-view";
 
 // Hooks
 export {
