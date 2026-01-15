@@ -14,16 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { useSession } from "@/features/auth/hooks/use-auth";
 import { convertToBaseCurrency } from "@/lib/currency-conversion";
-
-type Expense = {
-  id: string;
-  amount: number;
-  currency: string;
-  exchangeRate: number;
-  description: string;
-  date: Date;
-  category: { name: string; color: string } | null;
-};
+import type { Expense } from "../types";
 
 type ExpenseTableProps = {
   expenses: Expense[];
