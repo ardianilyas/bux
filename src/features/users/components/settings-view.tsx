@@ -21,13 +21,18 @@ import { useSession } from "@/features/auth/hooks/use-auth";
 import { toast } from "sonner";
 
 export function SettingsView() {
-  const { data: session } = useSession();
+  const { data: session, refetch: refetchSession } = useSession();
   const utils = trpc.useUtils();
 
   const updateCurrency = trpc.user.updateCurrency.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Currency updated successfully");
-      utils.invalidate();
+      // Invalidate all queries to refresh data with new currency
+      await utils.invalidate();
+      // Refresh session to update user currency in UI immediately
+      await refetchSession();
+      // Force a full page reload to ensure all components re-render
+      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.message);
