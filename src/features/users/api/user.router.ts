@@ -5,6 +5,8 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/features/auth/config/auth";
 import { headers } from "next/headers";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { USER_STATUS } from "@/lib/constants";
 
 export const userRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -39,6 +41,24 @@ export const userRouter = createTRPCRouter({
         })
         .where(eq(users.id, input.userId))
         .returning();
+
+      // Log the audit event
+      const actionMap = {
+        [USER_STATUS.BANNED]: AUDIT_ACTIONS.USER.BAN,
+        [USER_STATUS.SUSPENDED]: AUDIT_ACTIONS.USER.SUSPEND,
+        [USER_STATUS.ACTIVE]: AUDIT_ACTIONS.USER.ACTIVATE,
+      };
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: actionMap[input.status],
+        targetId: input.userId,
+        targetType: "user",
+        metadata: {
+          previousStatus: updatedUser.status,
+          newStatus: input.status,
+        },
+      });
 
       return updatedUser;
     }),

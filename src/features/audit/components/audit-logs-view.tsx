@@ -77,7 +77,7 @@ export function AuditLogsView() {
 
       {/* Logs Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-6">
           {isLoading ? (
             <div className="p-6 space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (

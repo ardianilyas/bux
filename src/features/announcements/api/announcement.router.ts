@@ -3,6 +3,8 @@ import { createTRPCRouter, adminProcedure, protectedProcedure } from "@/trpc/ini
 import { db } from "@/db";
 import { announcements } from "@/db/schema";
 import { eq, desc, and, lte, or, isNull, gte } from "drizzle-orm";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { ANNOUNCEMENT_TYPES } from "@/lib/constants";
 
 export const announcementRouter = createTRPCRouter({
   // Admin: List all announcements
@@ -37,6 +39,16 @@ export const announcementRouter = createTRPCRouter({
           userId: ctx.session.user.id,
         })
         .returning();
+
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.ANNOUNCEMENT.CREATE,
+        targetId: announcement.id,
+        targetType: "announcement",
+        metadata: { title: input.title, type: input.type },
+      });
+
       return announcement;
     }),
 
@@ -53,21 +65,40 @@ export const announcementRouter = createTRPCRouter({
         expiresAt: z.date().optional().nullable(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [announcement] = await db
         .update(announcements)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(announcements.id, id))
         .returning();
+
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.ANNOUNCEMENT.UPDATE,
+        targetId: input.id,
+        targetType: "announcement",
+        metadata: data,
+      });
+
       return announcement;
     }),
 
   // Admin: Delete announcement
   delete: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.delete(announcements).where(eq(announcements.id, input.id));
+
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.ANNOUNCEMENT.DELETE,
+        targetId: input.id,
+        targetType: "announcement",
+      });
+
       return { success: true };
     }),
 

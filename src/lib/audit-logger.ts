@@ -23,6 +23,42 @@ export type AuditAction =
   | "ticket.update"
   | "ticket.close";
 
+// Action constants to avoid magic strings
+export const AUDIT_ACTIONS = {
+  USER: {
+    LOGIN: "user.login" as const,
+    LOGOUT: "user.logout" as const,
+    BAN: "user.ban" as const,
+    SUSPEND: "user.suspend" as const,
+    ACTIVATE: "user.activate" as const,
+  },
+  EXPENSE: {
+    CREATE: "expense.create" as const,
+    UPDATE: "expense.update" as const,
+    DELETE: "expense.delete" as const,
+  },
+  CATEGORY: {
+    CREATE: "category.create" as const,
+    UPDATE: "category.update" as const,
+    DELETE: "category.delete" as const,
+  },
+  BUDGET: {
+    CREATE: "budget.create" as const,
+    UPDATE: "budget.update" as const,
+    DELETE: "budget.delete" as const,
+  },
+  ANNOUNCEMENT: {
+    CREATE: "announcement.create" as const,
+    UPDATE: "announcement.update" as const,
+    DELETE: "announcement.delete" as const,
+  },
+  TICKET: {
+    CREATE: "ticket.create" as const,
+    UPDATE: "ticket.update" as const,
+    CLOSE: "ticket.close" as const,
+  },
+} as const;
+
 /**
  * Log an audit event to the database
  */

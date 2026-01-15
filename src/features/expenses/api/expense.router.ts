@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { expenses } from "@/db/schema";
 import { eq, desc, and, ilike, gte, lte } from "drizzle-orm";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 
 export const expenseRouter = createTRPCRouter({
   list: protectedProcedure
@@ -86,6 +87,18 @@ export const expenseRouter = createTRPCRouter({
         })
         .returning();
 
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.EXPENSE.CREATE,
+        targetId: expense.id,
+        targetType: "expense",
+        metadata: {
+          amount: expense.amount,
+          description: expense.description,
+        },
+      });
+
       return expense;
     }),
 
@@ -112,6 +125,15 @@ export const expenseRouter = createTRPCRouter({
         .where(and(eq(expenses.id, id), eq(expenses.userId, ctx.session.user.id)))
         .returning();
 
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.EXPENSE.UPDATE,
+        targetId: input.id,
+        targetType: "expense",
+        metadata: input,
+      });
+
       return expense;
     }),
 
@@ -123,6 +145,14 @@ export const expenseRouter = createTRPCRouter({
         .where(
           and(eq(expenses.id, input.id), eq(expenses.userId, ctx.session.user.id))
         );
+
+      // Log audit event
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.EXPENSE.DELETE,
+        targetId: input.id,
+        targetType: "expense",
+      });
 
       return { success: true };
     }),
