@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -10,26 +8,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { Expense } from "../types";
 import { formatCurrency } from "@/lib/utils";
+import { useSession } from "@/features/auth/hooks/use-auth";
+import { convertToBaseCurrency } from "@/lib/currency-conversion";
+
+type Expense = {
+  id: string;
+  amount: number;
+  currency: string;
+  exchangeRate: number;
+  description: string;
+  date: Date;
+  category: { name: string; color: string } | null;
+};
 
 type ExpenseTableProps = {
   expenses: Expense[];
   onEdit: (expense: Expense) => void;
   onDelete: (id: string) => void;
-  isDeleting: boolean;
+  isDeleting?: boolean;
 };
-
-
-
-function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-}
 
 export function ExpenseTable({
   expenses,
@@ -37,98 +38,98 @@ export function ExpenseTable({
   onDelete,
   isDeleting,
 }: ExpenseTableProps) {
-  if (expenses.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-muted-foreground mb-4"
-          >
-            <line x1="12" x2="12" y1="2" y2="22" />
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
-          <p className="text-muted-foreground text-lg">No expenses yet</p>
-          <p className="text-muted-foreground text-sm mt-1">
-            Start tracking your expenses by adding your first one
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(date));
+  };
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle className="text-foreground">All Expenses</CardTitle>
+      </CardHeader>
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-muted-foreground">
+                Description
+              </TableHead>
+              <TableHead className="text-muted-foreground">Category</TableHead>
+              <TableHead className="text-muted-foreground">Date</TableHead>
+              <TableHead className="text-muted-foreground">Amount</TableHead>
+              <TableHead className="text-right text-muted-foreground">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {expenses.map((expense) => (
-              <TableRow key={expense.id}>
-                <TableCell className="font-medium text-foreground">
-                  {expense.description}
-                </TableCell>
-                <TableCell>
-                  {expense.category ? (
-                    <Badge
-                      variant="secondary"
-                      className="font-normal"
-                      style={{
-                        backgroundColor: `${expense.category.color}20`,
-                        color: expense.category.color,
-                        borderColor: expense.category.color,
-                      }}
-                    >
-                      {expense.category.name}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(expense.date)}
-                </TableCell>
-                <TableCell className="font-semibold text-foreground">
-                  {formatCurrency(expense.amount)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-start gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(expense)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => onDelete(expense.id)}
-                      disabled={isDeleting}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {expenses.map((expense) => {
+              const convertedAmount = convertToBaseCurrency(expense, userBaseCurrency);
+              const isDifferentCurrency = expense.currency !== userBaseCurrency;
+
+              return (
+                <TableRow key={expense.id}>
+                  <TableCell className="font-medium text-foreground">
+                    {expense.description}
+                  </TableCell>
+                  <TableCell>
+                    {expense.category ? (
+                      <Badge
+                        variant="outline"
+                        style={{
+                          borderColor: expense.category.color,
+                          color: expense.category.color,
+                        }}
+                      >
+                        {expense.category.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(expense.date)}
+                  </TableCell>
+                  <TableCell className="font-semibold text-foreground">
+                    <div>
+                      {formatCurrency(convertedAmount, userBaseCurrency)}
+                      {isDifferentCurrency && (
+                        <div className="text-xs text-muted-foreground">
+                          {formatCurrency(expense.amount, expense.currency)}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(expense)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600"
+                        onClick={() => onDelete(expense.id)}
+                        disabled={isDeleting}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
