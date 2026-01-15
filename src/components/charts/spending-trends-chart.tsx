@@ -11,16 +11,20 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { convertToBaseCurrency } from "@/lib/currency-conversion";
 
 interface SpendingTrendsChartProps {
   expenses: {
     id: string;
     amount: number;
+    currency: string;
+    exchangeRate: number;
     date: Date | string;
   }[];
+  userBaseCurrency: string;
 }
 
-export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
+export function SpendingTrendsChart({ expenses, userBaseCurrency }: SpendingTrendsChartProps) {
   // Group expenses by month for the last 6 months
   const getMonthlyData = () => {
     const monthlyData: { [key: string]: number } = {};
@@ -36,7 +40,7 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
       monthlyData[monthKey] = 0;
     }
 
-    // Sum expenses by month
+    // Sum expenses by month (converted to base currency)
     expenses.forEach((expense) => {
       const expenseDate = new Date(expense.date);
       const monthKey = expenseDate.toLocaleDateString("en-US", {
@@ -44,7 +48,8 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
         year: "2-digit",
       });
       if (monthKey in monthlyData) {
-        monthlyData[monthKey] += expense.amount;
+        const convertedAmount = convertToBaseCurrency(expense, userBaseCurrency);
+        monthlyData[monthKey] += convertedAmount;
       }
     });
 
@@ -55,8 +60,6 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
   };
 
   const data = getMonthlyData();
-
-
 
   return (
     <Card>
@@ -121,10 +124,10 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
                     className="text-muted-foreground text-xs"
                     fontSize={12}
                   >
-                    {formatCurrency(payload.value)}
+                    {formatCurrency(payload.value, userBaseCurrency)}
                   </text>
                 )}
-                tickFormatter={formatCurrency}
+                tickFormatter={(value) => formatCurrency(value, userBaseCurrency)}
                 width={80}
               />
               <Tooltip
@@ -136,7 +139,7 @@ export function SpendingTrendsChart({ expenses }: SpendingTrendsChartProps) {
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
                 itemStyle={{ color: "hsl(var(--foreground))" }}
-                formatter={(value: number | undefined) => [formatCurrency(value ?? 0), "Spent"]}
+                formatter={(value: number | undefined) => [formatCurrency(value ?? 0, userBaseCurrency), "Spent"]}
               />
               <Area
                 type="monotone"

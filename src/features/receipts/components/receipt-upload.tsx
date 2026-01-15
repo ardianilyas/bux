@@ -57,6 +57,8 @@ export function ReceiptUpload() {
       description: parsedReceipt.merchant || "Scanned Receipt",
       date: parsedReceipt.date ? new Date(parsedReceipt.date) : new Date(),
       categoryId: category?.id,
+      currency: "IDR", // Receipt scanner assumes local currency
+      exchangeRate: 1.0,
     });
 
     setOpen(false);

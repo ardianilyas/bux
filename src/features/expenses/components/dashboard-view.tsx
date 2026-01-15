@@ -6,29 +6,38 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SpendingTrendsChart } from "@/components/charts/spending-trends-chart";
 import { CategoryBreakdownChart } from "@/components/charts/category-breakdown-chart";
 import { AnnouncementBanner } from "@/features/announcements";
+import { useSession } from "@/features/auth/hooks/use-auth";
+import { calculateTotalInBaseCurrency } from "@/lib/currency-conversion";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 export function DashboardView() {
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
   const { data: expenses, isLoading: expensesLoading } =
     trpc.expense.list.useQuery();
   const { data: categories, isLoading: categoriesLoading } =
     trpc.category.list.useQuery();
   const { data: budgets } = trpc.budget.list.useQuery();
 
-  const totalExpenses =
-    expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
-  const thisMonthExpenses =
-    expenses
-      ?.filter((expense) => {
+  const totalExpenses = expenses
+    ? calculateTotalInBaseCurrency(expenses, userBaseCurrency)
+    : 0;
+
+  const thisMonthExpenses = expenses
+    ? calculateTotalInBaseCurrency(
+      expenses.filter((expense) => {
         const expenseDate = new Date(expense.date);
         const now = new Date();
         return (
           expenseDate.getMonth() === now.getMonth() &&
           expenseDate.getFullYear() === now.getFullYear()
         );
-      })
-      .reduce((sum, expense) => sum + expense.amount, 0) || 0;
+      }),
+      userBaseCurrency
+    )
+    : 0;
 
   const recentExpenses = expenses?.slice(0, 5) || [];
 
@@ -54,16 +63,15 @@ export function DashboardView() {
   const getMonthlySpending = (categoryId: string) => {
     if (!expenses) return 0;
     const now = new Date();
-    return expenses
-      .filter((expense) => {
-        const expenseDate = new Date(expense.date);
-        return (
-          expense.categoryId === categoryId &&
-          expenseDate.getMonth() === now.getMonth() &&
-          expenseDate.getFullYear() === now.getFullYear()
-        );
-      })
-      .reduce((sum, expense) => sum + expense.amount, 0);
+    const categoryExpenses = expenses.filter((expense) => {
+      const expenseDate = new Date(expense.date);
+      return (
+        expense.categoryId === categoryId &&
+        expenseDate.getMonth() === now.getMonth() &&
+        expenseDate.getFullYear() === now.getFullYear()
+      );
+    });
+    return calculateTotalInBaseCurrency(categoryExpenses, userBaseCurrency);
   };
 
   const getProgressColor = (percent: number) => {
@@ -136,7 +144,7 @@ export function DashboardView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {formatCurrency(totalExpenses)}
+              {formatCurrency(totalExpenses, userBaseCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
@@ -165,7 +173,7 @@ export function DashboardView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {formatCurrency(thisMonthExpenses)}
+              {formatCurrency(thisMonthExpenses, userBaseCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">Current month</p>
           </CardContent>
@@ -227,8 +235,8 @@ export function DashboardView() {
 
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        <SpendingTrendsChart expenses={expenses || []} />
-        <CategoryBreakdownChart expenses={currentMonthExpenses} />
+        <SpendingTrendsChart expenses={expenses || []} userBaseCurrency={userBaseCurrency} />
+        <CategoryBreakdownChart expenses={currentMonthExpenses} userBaseCurrency={userBaseCurrency} />
       </div>
 
       {/* Budget Overview */}
@@ -269,7 +277,7 @@ export function DashboardView() {
                             : "text-muted-foreground"
                         }
                       >
-                        {formatCurrency(spent)} / {formatCurrency(budget.amount)}
+                        {formatCurrency(spent, userBaseCurrency)} / {formatCurrency(budget.amount, userBaseCurrency)}
                       </span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -301,50 +309,58 @@ export function DashboardView() {
             </div>
           ) : (
             <div className="space-y-4">
-              {recentExpenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center"
-                      style={{
-                        backgroundColor: expense.category?.color || "#6366f1",
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+              {recentExpenses.map((expense) => {
+                const convertedAmount = expense.amount * expense.exchangeRate;
+                return (
+                  <div
+                    key={expense.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-10 w-10 rounded-lg flex items-center justify-center"
+                        style={{
+                          backgroundColor: expense.category?.color || "#6366f1",
+                        }}
                       >
-                        <line x1="12" x2="12" y1="2" y2="22" />
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="12" x2="12" y1="2" y2="22" />
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {expense.description}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {expense.category?.name || "Uncategorized"} •{" "}
+                          {formatDate(expense.date)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {expense.description}
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        -{formatCurrency(convertedAmount, userBaseCurrency)}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {expense.category?.name || "Uncategorized"} •{" "}
-                        {formatDate(expense.date)}
-                      </p>
+                      {expense.currency !== userBaseCurrency && (
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrency(expense.amount, expense.currency)}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">
-                      -{formatCurrency(expense.amount)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

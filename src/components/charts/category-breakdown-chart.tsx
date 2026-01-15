@@ -3,17 +3,21 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, PieLabelRenderProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { convertToBaseCurrency } from "@/lib/currency-conversion";
 
 interface CategoryBreakdownChartProps {
   expenses: {
     id: string;
     amount: number;
+    currency: string;
+    exchangeRate: number;
     category: { id: string; name: string; color: string } | null;
   }[];
+  userBaseCurrency: string;
 }
 
-export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps) {
-  // Group expenses by category
+export function CategoryBreakdownChart({ expenses, userBaseCurrency }: CategoryBreakdownChartProps) {
+  // Group expenses by category (converted to base currency)
   const getCategoryData = () => {
     const categoryTotals: { [key: string]: { name: string; amount: number; color: string } } = {};
 
@@ -28,7 +32,8 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
           color: categoryColor,
         };
       }
-      categoryTotals[categoryName].amount += expense.amount;
+      const convertedAmount = convertToBaseCurrency(expense, userBaseCurrency);
+      categoryTotals[categoryName].amount += convertedAmount;
     });
 
     return Object.values(categoryTotals)
@@ -41,8 +46,6 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
 
   const data = getCategoryData();
   const total = data.reduce((sum, item) => sum + item.amount, 0);
-
-
 
   const renderCustomizedLabel = (props: PieLabelRenderProps) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
@@ -100,7 +103,7 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
       <CardHeader>
         <CardTitle className="text-foreground">Category Breakdown</CardTitle>
         <p className="text-sm text-muted-foreground">
-          This month's spending by category
+          Spending distribution by category this month
         </p>
       </CardHeader>
       <CardContent>
@@ -114,10 +117,8 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
                 labelLine={false}
                 label={renderCustomizedLabel}
                 outerRadius={100}
-                innerRadius={40}
                 fill="#8884d8"
                 dataKey="amount"
-                paddingAngle={2}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -130,19 +131,21 @@ export function CategoryBreakdownChart({ expenses }: CategoryBreakdownChartProps
                   borderRadius: "8px",
                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 }}
+                labelStyle={{ color: "hsl(var(--foreground))" }}
                 itemStyle={{ color: "hsl(var(--foreground))" }}
-                formatter={(value: number | undefined, name?: string) => [
-                  `${formatCurrency(value ?? 0)} (${(((value ?? 0) / total) * 100).toFixed(1)}%)`,
-                  name ?? "",
+                formatter={(value: number | undefined) => [
+                  `${formatCurrency(value ?? 0, userBaseCurrency)} (${(((value ?? 0) / total) * 100).toFixed(1)}%)`,
+                  "Amount",
                 ]}
               />
               <Legend
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
-                formatter={(value: string) => (
-                  <span className="text-foreground">{value}</span>
+                wrapperStyle={{
+                  paddingTop: "20px",
+                }}
+                formatter={(value) => (
+                  <span className="text-sm text-foreground">{value}</span>
                 )}
+                iconType="circle"
               />
             </PieChart>
           </ResponsiveContainer>
