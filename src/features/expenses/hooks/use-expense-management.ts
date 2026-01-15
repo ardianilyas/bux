@@ -10,8 +10,12 @@ import {
   type ExpenseFilters,
 } from "@/features/expenses";
 import { useCategories } from "@/features/categories";
+import { useSession } from "@/features/auth/hooks/use-auth";
 
 export function useExpenseManagement() {
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -20,6 +24,8 @@ export function useExpenseManagement() {
     amount: "",
     date: new Date().toISOString().split("T")[0],
     categoryId: "",
+    currency: userBaseCurrency,
+    exchangeRate: "1",
   });
 
   const [filters, setFilters] = useState<ExpenseFilters>({
@@ -42,6 +48,8 @@ export function useExpenseManagement() {
       amount: "",
       date: new Date().toISOString().split("T")[0],
       categoryId: "",
+      currency: userBaseCurrency,
+      exchangeRate: "1",
     });
   };
 
@@ -60,6 +68,8 @@ export function useExpenseManagement() {
         amount: parseFloat(formData.amount),
         date: new Date(formData.date),
         categoryId: formData.categoryId || undefined,
+        currency: formData.currency,
+        exchangeRate: parseFloat(formData.exchangeRate),
       },
       {
         onSuccess: () => {
@@ -87,6 +97,8 @@ export function useExpenseManagement() {
         amount: parseFloat(formData.amount),
         date: new Date(formData.date),
         categoryId: formData.categoryId || null,
+        currency: formData.currency,
+        exchangeRate: parseFloat(formData.exchangeRate),
       },
       {
         onSuccess: () => {
@@ -116,18 +128,21 @@ export function useExpenseManagement() {
       amount: expense.amount.toString(),
       date: new Date(expense.date).toISOString().split("T")[0],
       categoryId: expense.categoryId || "",
+      currency: expense.currency || userBaseCurrency,
+      exchangeRate: (expense.exchangeRate || 1).toString(),
     });
   };
 
   const handleExportCsv = () => {
     if (!expenses) return;
     const csvContent = [
-      ["Date", "Description", "Category", "Amount"],
+      ["Date", "Description", "Category", "Amount", "Currency"],
       ...expenses.map((e) => [
         new Date(e.date).toLocaleDateString(),
         `"${e.description.replace(/"/g, '""')}"`,
         e.category?.name || "Uncategorized",
         e.amount.toFixed(2),
+        e.currency || userBaseCurrency,
       ]),
     ]
       .map((row) => row.join(","))

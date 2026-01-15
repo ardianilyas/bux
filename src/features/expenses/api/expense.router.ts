@@ -68,6 +68,8 @@ export const expenseRouter = createTRPCRouter({
         description: z.string().min(1).max(255),
         date: z.coerce.date(),
         categoryId: z.string().uuid().optional(),
+        currency: z.string(),
+        exchangeRate: z.number().positive(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -75,6 +77,8 @@ export const expenseRouter = createTRPCRouter({
         .insert(expenses)
         .values({
           amount: input.amount,
+          currency: input.currency,
+          exchangeRate: input.exchangeRate,
           description: input.description,
           date: input.date,
           categoryId: input.categoryId,
@@ -93,6 +97,8 @@ export const expenseRouter = createTRPCRouter({
         description: z.string().min(1).max(255).optional(),
         date: z.coerce.date().optional(),
         categoryId: z.string().uuid().optional().nullable(),
+        currency: z.string().optional(),
+        exchangeRate: z.number().positive().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   image: text("image"),
   role: text("role").notNull().default("user"),
   status: text("status").notNull().default("active"),
+  currency: text("currency").notNull().default("IDR"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -80,6 +81,8 @@ export const categories = pgTable("categories", {
 export const expenses = pgTable("expenses", {
   id: uuid("id").defaultRandom().primaryKey(),
   amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("IDR"),
+  exchangeRate: real("exchange_rate").notNull().default(1.0),
   description: text("description").notNull(),
   merchant: text("merchant"), // Added for receipt scanning
   date: timestamp("date").notNull().defaultNow(),
@@ -99,6 +102,7 @@ export const expenses = pgTable("expenses", {
 export const budgets = pgTable("budgets", {
   id: uuid("id").defaultRandom().primaryKey(),
   amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("IDR"),
   categoryId: uuid("category_id")
     .notNull()
     .references(() => categories.id, { onDelete: "cascade" }),
@@ -128,6 +132,7 @@ export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("IDR"),
   billingCycle: text("billing_cycle").notNull().default("monthly"), // weekly, monthly, yearly
   nextBillingDate: timestamp("next_billing_date").notNull(),
   categoryId: uuid("category_id").references(() => categories.id, {

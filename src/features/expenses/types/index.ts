@@ -3,6 +3,8 @@
 export type Expense = {
   id: string;
   amount: number;
+  currency: string;
+  exchangeRate: number;
   description: string;
   date: Date;
   categoryId: string | null;
@@ -21,6 +23,8 @@ export type ExpenseFormData = {
   amount: string;
   date: string;
   categoryId: string;
+  currency: string;
+  exchangeRate: string;
 };
 
 export type ExpenseFilters = {
@@ -35,6 +39,8 @@ export type CreateExpenseInput = {
   description: string;
   date: Date;
   categoryId?: string;
+  currency: string;
+  exchangeRate: number;
 };
 
 export type UpdateExpenseInput = {
@@ -43,4 +49,6 @@ export type UpdateExpenseInput = {
   description?: string;
   date?: Date;
   categoryId?: string | null;
+  currency?: string;
+  exchangeRate?: number;
 };

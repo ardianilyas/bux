@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "@/trpc/init";
+import { createTRPCRouter, adminProcedure, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -31,6 +31,22 @@ export const userRouter = createTRPCRouter({
         .update(users)
         .set({ status: input.status, updatedAt: new Date() })
         .where(eq(users.id, input.userId))
+        .returning();
+
+      return updatedUser;
+    }),
+
+  updateCurrency: protectedProcedure
+    .input(
+      z.object({
+        currency: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ currency: input.currency, updatedAt: new Date() })
+        .where(eq(users.id, ctx.session.user.id))
         .returning();
 
       return updatedUser;

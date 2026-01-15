@@ -11,9 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CURRENCIES } from "@/lib/currency";
+import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { expenseSchema } from "@/lib/validations/expense";
+import { useSession } from "@/features/auth/hooks/use-auth";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Category = {
   id: string;
@@ -26,6 +29,8 @@ type ExpenseFormData = {
   amount: string;
   date: string;
   categoryId: string;
+  currency: string;
+  exchangeRate: string;
 };
 
 type ExpenseFormProps = {
@@ -47,6 +52,9 @@ export function ExpenseForm({
   onCancel,
   categories,
 }: ExpenseFormProps) {
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
   const [errors, setErrors] = useState<{
     description?: string;
     amount?: string;
@@ -57,6 +65,29 @@ export function ExpenseForm({
     amount?: boolean;
     date?: boolean;
   }>({});
+  const [fetchingRate, setFetchingRate] = useState(false);
+
+  // Fetch exchange rate when currency changes
+  useEffect(() => {
+    const fetchRate = async () => {
+      if (formData.currency === userBaseCurrency) {
+        setFormData({ ...formData, exchangeRate: "1" });
+        return;
+      }
+
+      setFetchingRate(true);
+      const rate = await fetchExchangeRate(formData.currency, userBaseCurrency);
+      setFetchingRate(false);
+
+      if (rate) {
+        setFormData({ ...formData, exchangeRate: rate.toString() });
+      }
+    };
+
+    if (formData.currency && formData.currency !== userBaseCurrency) {
+      fetchRate();
+    }
+  }, [formData.currency, userBaseCurrency]);
 
   const validateField = (field: "description" | "amount" | "date", value: string) => {
     try {
@@ -122,6 +153,7 @@ export function ExpenseForm({
         />
         <InputError message={errors.description} />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
@@ -138,19 +170,66 @@ export function ExpenseForm({
           />
           <InputError message={errors.amount} />
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => handleChange("date", e.target.value)}
-            onBlur={() => handleBlur("date")}
-            className={errors.date ? "border-destructive" : ""}
-          />
-          <InputError message={errors.date} />
+          <Label htmlFor="currency">Currency</Label>
+          <Select
+            value={formData.currency}
+            onValueChange={(value) => handleChange("currency", value)}
+          >
+            <SelectTrigger id="currency">
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCIES.map((currency) => (
+                <SelectItem key={currency.code} value={currency.code}>
+                  {currency.code} - {currency.symbol}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
+
+      {formData.currency !== userBaseCurrency && (
+        <div className="space-y-2">
+          <Label htmlFor="exchangeRate">
+            Exchange Rate ({formData.currency} to {userBaseCurrency})
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="exchangeRate"
+              type="number"
+              step="0.000001"
+              min="0"
+              value={formData.exchangeRate}
+              onChange={(e) => handleChange("exchangeRate", e.target.value)}
+              placeholder="1.0"
+              disabled={fetchingRate}
+            />
+            {fetchingRate && (
+              <span className="text-sm text-muted-foreground">Fetching...</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            1 {formData.currency} = {formData.exchangeRate} {userBaseCurrency}
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="date">Date</Label>
+        <Input
+          id="date"
+          type="date"
+          value={formData.date}
+          onChange={(e) => handleChange("date", e.target.value)}
+          onBlur={() => handleBlur("date")}
+          className={errors.date ? "border-destructive" : ""}
+        />
+        <InputError message={errors.date} />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="category">Category</Label>
         <Select
@@ -178,6 +257,7 @@ export function ExpenseForm({
           </SelectContent>
         </Select>
       </div>
+
       <div className="flex justify-end gap-2 pt-4">
         <Button variant="outline" onClick={onCancel}>
           Cancel

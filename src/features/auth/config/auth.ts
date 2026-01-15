@@ -28,6 +28,10 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "active",
       },
+      currency: {
+        type: "string",
+        defaultValue: "IDR",
+      },
     },
   },
   session: {
