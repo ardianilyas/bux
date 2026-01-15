@@ -122,13 +122,13 @@ export function AdminDashboardView() {
                       dataKey="date"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={{ className: "fill-muted-foreground", fontSize: 12 }}
                       tickFormatter={(value) => new Date(value).getDate().toString()}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={{ className: "fill-muted-foreground", fontSize: 12 }}
                       width={30}
                     />
                     <Tooltip
@@ -174,13 +174,13 @@ export function AdminDashboardView() {
                       dataKey="date"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={{ className: "fill-muted-foreground", fontSize: 12 }}
                       tickFormatter={(value) => new Date(value).getDate().toString()}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tick={{ className: "fill-muted-foreground", fontSize: 12 }}
                       width={60}
                       tickFormatter={(value) => formatCurrency(value)}
                     />
