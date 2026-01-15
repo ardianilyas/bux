@@ -141,4 +141,21 @@ export const subscriptionRouter = createTRPCRouter({
       },
     });
   }),
+
+  // Process due subscriptions for current user
+  processRecurring: protectedProcedure.mutation(async ({ ctx }) => {
+    const { processUserSubscriptions } = await import("@/lib/recurring");
+
+    const results = await processUserSubscriptions(ctx.session.user.id);
+
+    return {
+      success: true,
+      processed: results.length,
+      results: results.map(r => ({
+        name: r.subscriptionName,
+        expensesCreated: r.expensesCreated,
+        nextBillingDate: r.newNextBillingDate,
+      })),
+    };
+  }),
 });

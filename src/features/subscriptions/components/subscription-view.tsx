@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, PlayCircle } from "lucide-react";
 import { useSubscription, type BillingCycleType } from "../hooks/use-subscription";
 
 const getCycleLabel = (cycle: string) => {
@@ -47,6 +47,20 @@ const formatDate = (date: Date) => {
     day: "numeric",
     year: "numeric",
   }).format(new Date(date));
+};
+
+const getDueStatus = (nextBillingDate: Date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = new Date(nextBillingDate);
+  dueDate.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return { status: "overdue", label: `${Math.abs(diffDays)} day${Math.abs(diffDays) > 1 ? 's' : ''} overdue`, variant: "destructive" as const };
+  if (diffDays === 0) return { status: "today", label: "Due today", variant: "destructive" as const };
+  if (diffDays <= 3) return { status: "soon", label: `Due in ${diffDays} day${diffDays > 1 ? 's' : ''}`, variant: "secondary" as const };
+  return { status: "ok", label: formatDate(nextBillingDate), variant: "outline" as const };
 };
 
 export function SubscriptionView() {
@@ -92,6 +106,8 @@ export function SubscriptionView() {
     handleDeleteOpen,
     handleDelete,
     isDeleting,
+    handleProcessRecurring,
+    isProcessing,
   } = useSubscription();
 
   if (isLoading) {
@@ -109,13 +125,21 @@ export function SubscriptionView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Subscriptions</h1>
-          <p className="text-muted-foreground">
-            Total monthly: {formatCurrency(totalMonthly)}
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Subscriptions</h1>
+        <p className="text-muted-foreground">
+          Total monthly: {formatCurrency(totalMonthly)}
+        </p>
+      </div>
+      <div className="flex gap-2 items-center justify-between">
+        <Button
+          variant="outline"
+          onClick={handleProcessRecurring}
+          disabled={isProcessing}
+        >
+          <PlayCircle className="mr-2 h-4 w-4" />
+          {isProcessing ? "Processing..." : "Process Due"}
+        </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>Add Subscription</Button>
@@ -376,3 +400,4 @@ export function SubscriptionView() {
     </div>
   );
 }
+  

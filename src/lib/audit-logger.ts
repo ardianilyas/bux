@@ -21,7 +21,8 @@ export type AuditAction =
   | "announcement.delete"
   | "ticket.create"
   | "ticket.update"
-  | "ticket.close";
+  | "ticket.close"
+  | "subscription.process";
 
 // Action constants to avoid magic strings
 export const AUDIT_ACTIONS = {
@@ -56,6 +57,9 @@ export const AUDIT_ACTIONS = {
     CREATE: "ticket.create" as const,
     UPDATE: "ticket.update" as const,
     CLOSE: "ticket.close" as const,
+  },
+  SUBSCRIPTION: {
+    PROCESS: "subscription.process" as const,
   },
 } as const;
 

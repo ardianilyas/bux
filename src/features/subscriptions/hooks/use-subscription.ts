@@ -80,6 +80,24 @@ export function useSubscription() {
     },
   });
 
+  const processMutation = trpc.subscription.processRecurring.useMutation({
+    onSuccess: (data) => {
+      if (data.processed === 0) {
+        toast.info("No subscriptions due for processing");
+      } else {
+        const totalExpenses = data.results.reduce((sum, r) => sum + r.expensesCreated, 0);
+        toast.success(
+          `Processed ${data.processed} subscription${data.processed > 1 ? 's' : ''}, created ${totalExpenses} expense${totalExpenses > 1 ? 's' : ''}`
+        );
+      }
+      utils.subscription.list.invalidate();
+      utils.expense.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   // Handlers
   const resetForm = () => {
     setName("");
@@ -162,6 +180,10 @@ export function useSubscription() {
     deleteMutation.mutate({ id: deletingId });
   };
 
+  const handleProcessRecurring = () => {
+    processMutation.mutate();
+  };
+
   // Computed
   const totalMonthly = subscriptions
     ?.filter((s) => s.isActive)
@@ -222,6 +244,10 @@ export function useSubscription() {
     handleDeleteOpen,
     handleDelete,
     isDeleting: deleteMutation.isPending,
+
+    // Process Recurring
+    handleProcessRecurring,
+    isProcessing: processMutation.isPending,
   };
 }
 
