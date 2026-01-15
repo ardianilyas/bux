@@ -11,6 +11,7 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - 🧾 **Receipt Scanning** - Upload receipts and extract expense data with AI/OCR
 - 📢 **Announcements** - Admin-managed global announcements for users
 - 👥 **User Management** - Admin dashboard for managing users and roles
+- 🌍 **Multi-currency Support** - Set base currency, track expenses in any currency with real-time exchange rates
 - 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
 - �🔐 **Authentication** - Secure email/password authentication with Better Auth
 - 📈 **Dashboard** - Overview of spending patterns and budget status
@@ -42,6 +43,7 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 - **Date-fns** - Date manipulation
 - **Tesseract.js** - OCR for receipt scanning
 - **Google Generative AI** - AI-powered expense parsing
+- **Frankfurter API** - Real-time currency exchange rates
 
 ## Project Structure
 
@@ -49,7 +51,9 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 src/
 ├── app/                    # Next.js App Router
 │   ├── (app)/             # Authenticated routes
-│   │   └── dashboard/     # Dashboard pages
+│   │   ├── dashboard/     # Dashboard pages
+│   │   │   ├── settings/  # User settings (currency, etc.)
+│   │   │   └── ...
 │   ├── (auth)/            # Auth routes (login, register)
 │   └── api/               # API routes
 ├── features/              # Feature-based modules
@@ -69,7 +73,7 @@ src/
 ├── components/            # Shared components
 │   └── ui/               # Shadcn UI components
 ├── db/                    # Database schema and config
-├── lib/                   # Shared utilities
+├── lib/                   # Shared utilities (currency, validation, etc.)
 └── trpc/                  # tRPC configuration
 ```
 
@@ -145,10 +149,10 @@ This project follows a **feature-based architecture** pattern inspired by [bulle
 
 ## Database Schema
 
-- **users** - User accounts with roles (user/admin)
+- **users** - User accounts with roles and currency preference
 - **sessions** - Authentication sessions
 - **categories** - Expense categories with colors
-- **expenses** - Individual expense records
+- **expenses** - Individual expense records with currency and exchange rates
 - **budgets** - Monthly budget limits per category
 - **subscriptions** - Recurring subscription tracking
 - **announcements** - Global admin announcements
