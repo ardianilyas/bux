@@ -31,7 +31,7 @@ export function ExpenseFiltersCard({
 }: ExpenseFiltersProps) {
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="pt-4">
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
             <Label>Search</Label>

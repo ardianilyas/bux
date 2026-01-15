@@ -12,6 +12,7 @@ export type AnnouncementFormData = {
 export function useAnnouncementManagement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: announcements, isLoading } = trpc.announcement.list.useQuery();
   const utils = trpc.useUtils();
@@ -42,6 +43,7 @@ export function useAnnouncementManagement() {
     onSuccess: () => {
       toast.success("Announcement deleted");
       utils.announcement.list.invalidate();
+      setDeletingId(null);
     },
     onError: (error: any) => {
       toast.error(error.message);
@@ -65,6 +67,12 @@ export function useAnnouncementManagement() {
       id: editingAnnouncement.id,
       ...data,
     });
+  };
+
+  const handleDelete = () => {
+    if (deletingId) {
+      deleteMutation.mutate({ id: deletingId });
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -99,12 +107,15 @@ export function useAnnouncementManagement() {
     setIsCreateOpen,
     editingAnnouncement,
     setEditingAnnouncement,
+    deletingId,
+    setDeletingId,
     createMutation,
     updateMutation,
     deleteMutation,
     toggleMutation,
     handleCreate,
     handleUpdate,
+    handleDelete,
     getTypeColor,
     formatDate,
   };

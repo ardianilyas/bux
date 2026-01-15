@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AnnouncementForm } from "./announcement-form";
 import { useAnnouncementManagement } from "../hooks/use-announcement-management";
 
@@ -31,12 +32,15 @@ export function AnnouncementsView() {
     setIsCreateOpen,
     editingAnnouncement,
     setEditingAnnouncement,
+    deletingId,
+    setDeletingId,
     createMutation,
     deleteMutation,
     toggleMutation,
     updateMutation,
     handleCreate,
     handleUpdate,
+    handleDelete,
     getTypeColor,
     formatDate,
   } = useAnnouncementManagement();
@@ -134,7 +138,7 @@ export function AnnouncementsView() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => deleteMutation.mutate({ id: announcement.id })}
+                          onClick={() => setDeletingId(announcement.id)}
                           disabled={deleteMutation.isPending}
                         >
                           Delete
@@ -149,7 +153,6 @@ export function AnnouncementsView() {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editingAnnouncement} onOpenChange={(open) => !open && setEditingAnnouncement(null)}>
         <DialogContent>
           <DialogHeader>
@@ -171,6 +174,15 @@ export function AnnouncementsView() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={deletingId !== null}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+        onConfirm={handleDelete}
+        title="Delete Announcement"
+        description="Are you sure you want to delete this announcement? This action cannot be undone."
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   );
 }

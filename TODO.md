@@ -2,8 +2,8 @@
 
 ## 🚨 High Priority
 - [x] **Refactor Code**: Refactor all code on page.tsx that used "use client" to server components
-- [ ] **Refactor Codes**: Refactor all codes that doesnt implement hook on component to be separate in hook function. to be more cleaner and readable code
-- [ ] **Form Validation**: Enhance client-side form validation across all forms (Login, Register, Create Expense, Create Ticket) to provide better user feedback.
+- [x] **Refactor Codes**: Refactor all codes that doesnt implement hook on component to be separate in hook function. to be more cleaner and readable code
+- [x] **Form Validation**: Enhance client-side form validation across all forms (Login, Register, Create Expense, Create Ticket) to provide better user feedback using zod and add input error component for reusable input error message.
 - [ ] **Error Handling**: Implement global error boundaries and better toast notifications for server errors.
 
 ## 🚀 New Features
