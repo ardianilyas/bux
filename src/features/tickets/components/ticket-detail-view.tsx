@@ -1,7 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Send, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useTicketDetailManagement } from "../hooks/use-ticket-detail-management";
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -48,31 +45,14 @@ const formatStatus = (status: string) => {
 };
 
 export function TicketDetailView() {
-  const params = useParams();
-  const ticketId = params.id as string;
-
-  const [newMessage, setNewMessage] = useState("");
-
-  const { data: ticket, isLoading, refetch } = trpc.ticket.get.useQuery({ id: ticketId });
-
-  const addMessageMutation = trpc.ticket.addMessage.useMutation({
-    onSuccess: () => {
-      toast.success("Message sent");
-      setNewMessage("");
-      refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    addMessageMutation.mutate({
-      ticketId,
-      message: newMessage,
-    });
-  };
+  const {
+    ticket,
+    isLoading,
+    newMessage,
+    setNewMessage,
+    addMessageMutation,
+    handleSendMessage,
+  } = useTicketDetailManagement();
 
   if (isLoading) {
     return (

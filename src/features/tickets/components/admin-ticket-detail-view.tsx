@@ -1,7 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,52 +17,27 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Send, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useAdminTicketManagement } from "../hooks/use-admin-ticket-management";
 
 type Priority = "low" | "medium" | "high" | "urgent";
 type Status = "open" | "in_progress" | "resolved" | "closed";
 
 export function AdminTicketDetailView() {
-  const params = useParams();
-  const ticketId = params.id as string;
-
-  const [newMessage, setNewMessage] = useState("");
-  const [isInternal, setIsInternal] = useState(false);
-
-  const { data: ticket, isLoading, refetch } = trpc.ticket.adminGet.useQuery({ id: ticketId });
-  const { data: admins } = trpc.ticket.getAdmins.useQuery();
-
-  const updateMutation = trpc.ticket.adminUpdate.useMutation({
-    onSuccess: () => {
-      toast.success("Ticket updated");
-      refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
-
-  const addMessageMutation = trpc.ticket.adminAddMessage.useMutation({
-    onSuccess: () => {
-      toast.success("Message sent");
-      setNewMessage("");
-      setIsInternal(false);
-      refetch();
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    addMessageMutation.mutate({
-      ticketId,
-      message: newMessage,
-      isInternal,
-    });
-  };
+  const {
+    ticket,
+    isLoading,
+    admins,
+    newMessage,
+    setNewMessage,
+    isInternal,
+    setIsInternal,
+    updateMutation,
+    addMessageMutation,
+    handleSendMessage,
+    handleUpdateStatus,
+    handleUpdatePriority,
+    handleUpdateAssignee,
+  } = useAdminTicketManagement();
 
   if (isLoading) {
     return (
@@ -194,7 +167,7 @@ export function AdminTicketDetailView() {
                 <Label className="text-xs text-muted-foreground">Status</Label>
                 <Select
                   value={ticket.status}
-                  onValueChange={(v) => updateMutation.mutate({ id: ticketId, status: v as Status })}
+                  onValueChange={(v) => handleUpdateStatus(v as Status)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -212,7 +185,7 @@ export function AdminTicketDetailView() {
                 <Label className="text-xs text-muted-foreground">Priority</Label>
                 <Select
                   value={ticket.priority}
-                  onValueChange={(v) => updateMutation.mutate({ id: ticketId, priority: v as Priority })}
+                  onValueChange={(v) => handleUpdatePriority(v as Priority)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -230,7 +203,7 @@ export function AdminTicketDetailView() {
                 <Label className="text-xs text-muted-foreground">Assigned To</Label>
                 <Select
                   value={ticket.assignedToId || "unassigned"}
-                  onValueChange={(v) => updateMutation.mutate({ id: ticketId, assignedToId: v === "unassigned" ? null : v })}
+                  onValueChange={(v) => handleUpdateAssignee(v === "unassigned" ? null : v)}
                 >
                   <SelectTrigger>
                     <SelectValue />

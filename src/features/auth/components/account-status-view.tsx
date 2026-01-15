@@ -1,34 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession, signOut } from "@/lib/auth-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAccountStatus } from "../hooks/use-account-status";
 
 export function AccountStatusView() {
-  const router = useRouter();
-  const { data: session, isPending } = useSession();
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isPending && session?.user) {
-      const userStatus = (session.user as any)?.status;
-      if (userStatus === "active" || !userStatus) {
-        // Active users shouldn't be here
-        router.push("/dashboard");
-      } else {
-        setStatus(userStatus);
-      }
-    } else if (!isPending && !session) {
-      router.push("/login");
-    }
-  }, [session, isPending, router]);
-
-  const handleLogout = async () => {
-    await signOut();
-    router.push("/login");
-  };
+  const { status, isPending, isBanned, handleLogout } = useAccountStatus();
 
   if (isPending || !status) {
     return (
@@ -37,8 +14,6 @@ export function AccountStatusView() {
       </div>
     );
   }
-
-  const isBanned = status === "banned";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
