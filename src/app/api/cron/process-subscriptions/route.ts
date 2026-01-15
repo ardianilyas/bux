@@ -7,9 +7,10 @@ const CRON_SECRET = process.env.CRON_SECRET;
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron or has the correct secret
   const authHeader = request.headers.get("authorization");
+  const isDev = process.env.NODE_ENV === "development";
 
-  // In production, verify the secret
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  // Skip auth in development, require in production
+  if (!isDev && CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }
