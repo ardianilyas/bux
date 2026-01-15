@@ -249,6 +249,7 @@ const userMenuItems = [
   menuItems.find(m => m.title === "Budgets")!,
   menuItems.find(m => m.title === "Subscriptions")!,
   menuItems.find(m => m.title === "Support")!,
+  menuItems.find(m => m.title === "Settings")!,
 ];
 
 const adminMenuItems = [
