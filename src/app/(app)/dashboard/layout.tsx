@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useUserStore } from "@/store/use-user-store";
@@ -287,6 +287,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const user = useUserStore((state) => state.user);
   const clearUser = useUserStore((state) => state.clearUser);
@@ -330,19 +331,29 @@ export default function DashboardLayout({
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {userMenuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link
-                          href={item.url}
-                          className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors px-4"
+                  {userMenuItems.map((item) => {
+                    const isActive = pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          className={isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                         >
-                          {item.icon}
-                          <span className="font-medium">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-3 transition-colors px-4 ${isActive
+                              ? "text-foreground font-medium"
+                              : "text-muted-foreground hover:text-foreground"
+                              }`}
+                          >
+                            {item.icon}
+                            <span className="font-medium">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -355,19 +366,32 @@ export default function DashboardLayout({
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {adminMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild>
-                          <Link
-                            href={item.url}
-                            className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors px-4"
+                    {adminMenuItems.map((item) => {
+                      // Special case: Analytics menu (/dashboard/admin) should only be active on exact match
+                      const isActive = item.url === "/dashboard/admin"
+                        ? pathname === item.url
+                        : pathname === item.url || pathname?.startsWith(`${item.url}/`);
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive}
+                            className={isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                           >
-                            {item.icon}
-                            <span className="font-medium">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
+                            <Link
+                              href={item.url}
+                              className={`flex items-center gap-3 transition-colors px-4 ${isActive
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                                }`}
+                            >
+                              {item.icon}
+                              <span className="font-medium">{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
