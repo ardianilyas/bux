@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { useAuditLogs } from "../hooks/use-audit";
 import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
 
 export function AuditLogsView() {
   const [page, setPage] = useState(1);
@@ -94,6 +95,7 @@ export function AuditLogsView() {
                     <TableHead>Target</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Time</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -140,12 +142,19 @@ export function AuditLogsView() {
                           })}
                         </span>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/dashboard/admin/logs/${log.id}`}>
+                            View
+                          </Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {data?.logs.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={6}
                         className="text-center py-8 text-muted-foreground"
                       >
                         No audit logs found
