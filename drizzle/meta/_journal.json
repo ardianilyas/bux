@@ -8,6 +8,13 @@
       "when": 1768467639140,
       "tag": "0000_productive_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768488140055,
+      "tag": "0001_far_microchip",
+      "breakpoints": true
     }
   ]
 }
