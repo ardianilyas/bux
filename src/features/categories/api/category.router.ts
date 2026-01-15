@@ -3,6 +3,8 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/ini
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const categoryRouter = createTRPCRouter({
   list: protectedProcedure.query(async () => {
@@ -39,6 +41,18 @@ export const categoryRouter = createTRPCRouter({
         })
         .returning();
 
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.CATEGORY.CREATE,
+        targetId: category.id,
+        targetType: "category",
+        metadata: { name: input.name },
+        ipAddress,
+        userAgent,
+      });
+
       return category;
     }),
 
@@ -68,6 +82,18 @@ export const categoryRouter = createTRPCRouter({
         )
         .returning();
 
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.CATEGORY.UPDATE,
+        targetId: input.id,
+        targetType: "category",
+        metadata: data,
+        ipAddress,
+        userAgent,
+      });
+
       return category;
     }),
 
@@ -75,6 +101,17 @@ export const categoryRouter = createTRPCRouter({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await db.delete(categories).where(eq(categories.id, input.id));
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.CATEGORY.DELETE,
+        targetId: input.id,
+        targetType: "category",
+        ipAddress,
+        userAgent,
+      });
 
       return { success: true };
     }),

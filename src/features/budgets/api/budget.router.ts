@@ -3,6 +3,8 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { budgets } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const budgetRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -57,6 +59,18 @@ export const budgetRouter = createTRPCRouter({
         })
         .returning();
 
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.BUDGET.CREATE,
+        targetId: budget.id,
+        targetType: "budget",
+        metadata: { amount: input.amount, categoryId: input.categoryId },
+        ipAddress,
+        userAgent,
+      });
+
       return budget;
     }),
 
@@ -79,6 +93,18 @@ export const budgetRouter = createTRPCRouter({
         )
         .returning();
 
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.BUDGET.UPDATE,
+        targetId: input.id,
+        targetType: "budget",
+        metadata: { amount: input.amount },
+        ipAddress,
+        userAgent,
+      });
+
       return budget;
     }),
 
@@ -93,6 +119,17 @@ export const budgetRouter = createTRPCRouter({
             eq(budgets.userId, ctx.session.user.id)
           )
         );
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.BUDGET.DELETE,
+        targetId: input.id,
+        targetType: "budget",
+        ipAddress,
+        userAgent,
+      });
 
       return { success: true };
     }),

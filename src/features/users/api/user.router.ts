@@ -7,6 +7,7 @@ import { auth } from "@/features/auth/config/auth";
 import { headers } from "next/headers";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { USER_STATUS } from "@/lib/constants";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const userRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -49,6 +50,8 @@ export const userRouter = createTRPCRouter({
         [USER_STATUS.ACTIVE]: AUDIT_ACTIONS.USER.ACTIVATE,
       };
 
+      const { ipAddress, userAgent } = await getRequestMetadata();
+
       await logAudit({
         userId: ctx.session.user.id,
         action: actionMap[input.status],
@@ -58,6 +61,8 @@ export const userRouter = createTRPCRouter({
           previousStatus: updatedUser.status,
           newStatus: input.status,
         },
+        ipAddress,
+        userAgent,
       });
 
       return updatedUser;

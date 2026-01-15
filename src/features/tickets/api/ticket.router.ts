@@ -3,6 +3,8 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/ini
 import { db } from "@/db";
 import { tickets, ticketMessages, users } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const ticketRouter = createTRPCRouter({
   // User: List my tickets
@@ -59,6 +61,19 @@ export const ticketRouter = createTRPCRouter({
           userId: ctx.session.user.id,
         })
         .returning();
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.TICKET.CREATE,
+        targetId: ticket.id,
+        targetType: "ticket",
+        metadata: { subject: input.subject, priority: input.priority },
+        ipAddress,
+        userAgent,
+      });
+
       return ticket;
     }),
 
@@ -136,6 +151,19 @@ export const ticketRouter = createTRPCRouter({
         .set({ ...data, updatedAt: new Date() })
         .where(eq(tickets.id, id))
         .returning();
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.TICKET.UPDATE,
+        targetId: input.id,
+        targetType: "ticket",
+        metadata: data,
+        ipAddress,
+        userAgent,
+      });
+
       return updated;
     }),
 

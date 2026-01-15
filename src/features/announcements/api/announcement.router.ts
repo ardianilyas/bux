@@ -5,6 +5,7 @@ import { announcements } from "@/db/schema";
 import { eq, desc, and, lte, or, isNull, gte } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { ANNOUNCEMENT_TYPES } from "@/lib/constants";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const announcementRouter = createTRPCRouter({
   // Admin: List all announcements
@@ -41,12 +42,15 @@ export const announcementRouter = createTRPCRouter({
         .returning();
 
       // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
         userId: ctx.session.user.id,
         action: AUDIT_ACTIONS.ANNOUNCEMENT.CREATE,
         targetId: announcement.id,
         targetType: "announcement",
         metadata: { title: input.title, type: input.type },
+        ipAddress,
+        userAgent,
       });
 
       return announcement;
@@ -74,12 +78,15 @@ export const announcementRouter = createTRPCRouter({
         .returning();
 
       // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
         userId: ctx.session.user.id,
         action: AUDIT_ACTIONS.ANNOUNCEMENT.UPDATE,
         targetId: input.id,
         targetType: "announcement",
         metadata: data,
+        ipAddress,
+        userAgent,
       });
 
       return announcement;
@@ -92,11 +99,14 @@ export const announcementRouter = createTRPCRouter({
       await db.delete(announcements).where(eq(announcements.id, input.id));
 
       // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
         userId: ctx.session.user.id,
         action: AUDIT_ACTIONS.ANNOUNCEMENT.DELETE,
         targetId: input.id,
         targetType: "announcement",
+        ipAddress,
+        userAgent,
       });
 
       return { success: true };
