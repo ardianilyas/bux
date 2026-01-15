@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createSubscriptionSchema, updateSubscriptionSchema } from "@/lib/validations/subscription";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { subscriptions, expenses } from "@/db/schema";
@@ -20,17 +21,7 @@ export const subscriptionRouter = createTRPCRouter({
 
   // Create subscription
   create: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        amount: z.number().positive(),
-        billingCycle: z.enum(["weekly", "monthly", "yearly"]),
-        nextBillingDate: z.date(),
-        categoryId: z.string().uuid().optional(),
-        isActive: z.boolean().default(true),
-        createExpense: z.boolean().default(false),
-      })
-    )
+    .input(createSubscriptionSchema)
     .mutation(async ({ ctx, input }) => {
       return await db.transaction(async (tx) => {
         const [subscription] = await tx
@@ -75,17 +66,7 @@ export const subscriptionRouter = createTRPCRouter({
 
   // Update subscription
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z.string().min(1).optional(),
-        amount: z.number().positive().optional(),
-        billingCycle: z.enum(["weekly", "monthly", "yearly"]).optional(),
-        nextBillingDate: z.date().optional(),
-        categoryId: z.string().uuid().optional().nullable(),
-        isActive: z.boolean().optional(),
-      })
-    )
+    .input(updateSubscriptionSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [subscription] = await db

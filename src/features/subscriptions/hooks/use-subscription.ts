@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
+import { createSubscriptionSchema } from "@/lib/validations/subscription";
 
 type BillingCycle = "weekly" | "monthly" | "yearly";
 
@@ -90,18 +91,39 @@ export function useSubscription() {
   };
 
   const handleCreate = () => {
-    if (!name || !amount || !nextBillingDate) {
-      toast.error("Please fill in all required fields");
+    // Basic pre-validation
+    if (!name.trim()) {
+      toast.error("Name is required");
       return;
     }
-    createMutation.mutate({
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      toast.error("Amount must be a positive number");
+      return;
+    }
+    if (!nextBillingDate) {
+      toast.error("Next billing date is required");
+      return;
+    }
+
+    const payload = {
       name,
       amount: parseFloat(amount),
       billingCycle,
       nextBillingDate: new Date(nextBillingDate),
-      categoryId,
+      categoryId: categoryId || undefined,
       createExpense,
-    });
+    };
+
+    // Safe parse to catch any other issues before sending
+    const validation = createSubscriptionSchema.safeParse(payload);
+
+    if (!validation.success) {
+      const error = validation.error.issues[0];
+      toast.error(error.message);
+      return;
+    }
+
+    createMutation.mutate(payload);
   };
 
   const handleEditOpen = (sub: any) => {
