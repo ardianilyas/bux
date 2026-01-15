@@ -17,12 +17,12 @@ export function FormError({ message, className, onDismiss }: FormErrorProps) {
         className
       )}
     >
-      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+      <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
       <span className="flex-1">{message}</span>
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="flex-shrink-0 hover:opacity-70 transition-opacity"
+          className="shrink-0 hover:opacity-70 transition-opacity"
           aria-label="Dismiss error"
         >
           <X className="h-4 w-4" />
