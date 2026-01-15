@@ -57,9 +57,15 @@ export function useDeleteBudget() {
 /**
  * Calculate current month spending for a specific category
  */
+import { convertToBaseCurrency } from "@/lib/currency-conversion";
+
+/**
+ * Calculate current month spending for a specific category
+ */
 export function getMonthlySpending(
   expenses: Expense[] | undefined,
-  categoryId: string
+  categoryId: string,
+  userBaseCurrency: string = "IDR"
 ): number {
   if (!expenses) return 0;
   const now = new Date();
@@ -72,5 +78,7 @@ export function getMonthlySpending(
         expenseDate.getFullYear() === now.getFullYear()
       );
     })
-    .reduce((sum, expense) => sum + expense.amount, 0);
+    .reduce((sum, expense) => {
+      return sum + convertToBaseCurrency(expense, userBaseCurrency);
+    }, 0);
 }

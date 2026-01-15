@@ -19,7 +19,12 @@ import {
 } from "@/features/budgets";
 import { useBudgetManagement } from "../hooks/use-budget-management";
 
+import { useSession } from "@/features/auth/hooks/use-auth";
+
 export function BudgetsView() {
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
   const {
     budgets,
     budgetsLoading,
@@ -122,10 +127,11 @@ export function BudgetsView() {
             <BudgetCard
               key={budget.id}
               budget={budget}
-              spent={getMonthlySpending(expenses, budget.categoryId)}
+              spent={getMonthlySpending(expenses, budget.categoryId, userBaseCurrency)}
               onEdit={openEditDialog}
               onDelete={setDeletingId}
               isDeleting={deleteMutation.isPending}
+              userBaseCurrency={userBaseCurrency}
             />
           ))}
         </div>

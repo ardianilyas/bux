@@ -12,6 +12,7 @@ type BudgetCardProps = {
   onEdit: (budget: Budget) => void;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  userBaseCurrency: string;
 };
 
 export function BudgetCard({
@@ -20,6 +21,7 @@ export function BudgetCard({
   onEdit,
   onDelete,
   isDeleting,
+  userBaseCurrency,
 }: BudgetCardProps) {
   const percent = Math.min((spent / budget.amount) * 100, 100);
   const overBudget = spent > budget.amount;
@@ -52,7 +54,7 @@ export function BudgetCard({
               {budget.category.name}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {formatCurrency(budget.amount)} / month
+              {formatCurrency(budget.amount, userBaseCurrency)} / month
             </p>
           </div>
         </div>
@@ -61,7 +63,7 @@ export function BudgetCard({
         <div>
           <div className="flex justify-between text-sm mb-2">
             <span className="text-muted-foreground">
-              {formatCurrency(spent)} spent
+              {formatCurrency(spent, userBaseCurrency)} spent
             </span>
             <span
               className={
@@ -71,8 +73,8 @@ export function BudgetCard({
               }
             >
               {overBudget
-                ? `${formatCurrency(spent - budget.amount)} over`
-                : `${formatCurrency(budget.amount - spent)} left`}
+                ? `${formatCurrency(spent - budget.amount, userBaseCurrency)} over`
+                : `${formatCurrency(budget.amount - spent, userBaseCurrency)} left`}
             </span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
