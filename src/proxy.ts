@@ -15,6 +15,28 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Protect admin routes
+  if (pathname.startsWith("/dashboard/admin")) {
+    try {
+      const response = await fetch(`${request.nextUrl.origin}/api/auth/get-session`, {
+        headers: {
+          cookie: request.headers.get("cookie") || "",
+        },
+      });
+
+      const session = await response.json();
+      const role = session?.user?.role;
+
+      // Only allow admin and superadmin
+      if (role !== "admin" && role !== "superadmin") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    } catch (error) {
+      // If session verification fails, redirect to home to be safe
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
