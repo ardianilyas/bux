@@ -3,7 +3,8 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/ini
 import { db } from "@/db";
 import { tickets, ticketMessages, users } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { logAudit } from "@/lib/audit-logger";
+import { AUDIT_ACTIONS } from "@/lib/audit-constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const ticketRouter = createTRPCRouter({
@@ -292,13 +293,32 @@ export const ticketRouter = createTRPCRouter({
         assignedToId: z.string().optional().nullable(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [ticket] = await db
         .update(tickets)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(tickets.id, id))
         .returning();
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+
+      const action =
+        input.status === "closed"
+          ? AUDIT_ACTIONS.TICKET.CLOSE
+          : AUDIT_ACTIONS.TICKET.UPDATE;
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        action,
+        targetId: id,
+        targetType: "ticket",
+        metadata: data,
+        ipAddress,
+        userAgent,
+      });
+
       return ticket;
     }),
 
@@ -323,10 +343,26 @@ export const ticketRouter = createTRPCRouter({
         .returning();
 
       // Update ticket updatedAt
+
       await db
         .update(tickets)
         .set({ updatedAt: new Date() })
         .where(eq(tickets.id, input.ticketId));
+
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.TICKET.MESSAGE,
+        targetId: input.ticketId,
+        targetType: "ticket",
+        metadata: {
+          messageId: msg.id,
+          isInternal: input.isInternal,
+        },
+        ipAddress,
+        userAgent,
+      });
 
       return msg;
     }),

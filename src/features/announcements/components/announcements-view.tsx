@@ -24,6 +24,24 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AnnouncementForm } from "./announcement-form";
 import { PaginationControl } from "@/components/ui/pagination-control";
 import { useAnnouncementManagement } from "../hooks/use-announcement-management";
+import {
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Plus,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  AlertOctagon,
+  Megaphone
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/empty-state";
 
 export function AnnouncementsView() {
   const {
@@ -45,9 +63,43 @@ export function AnnouncementsView() {
     handleCreate,
     handleUpdate,
     handleDelete,
-    getTypeColor,
     formatDate,
   } = useAnnouncementManagement();
+
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case "info":
+        return (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50">
+            <Info className="h-3 w-3" />
+            Info
+          </Badge>
+        );
+      case "success":
+        return (
+          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50">
+            <CheckCircle2 className="h-3 w-3" />
+            Success
+          </Badge>
+        );
+      case "warning":
+        return (
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/50">
+            <AlertTriangle className="h-3 w-3" />
+            Warning
+          </Badge>
+        );
+      case "critical":
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50">
+            <AlertOctagon className="h-3 w-3" />
+            Critical
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -65,10 +117,16 @@ export function AnnouncementsView() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
+          <p className="text-muted-foreground">Manage system-wide announcements and notifications.</p>
+        </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button>New Announcement</Button>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Announcement
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -90,9 +148,17 @@ export function AnnouncementsView() {
         </CardHeader>
         <CardContent>
           {announcements?.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No announcements yet. Create your first one!
-            </p>
+            <EmptyState
+              icon={Megaphone}
+              title="No announcements yet"
+              description="Create announcements to notify all users about important updates or maintenance."
+              action={
+                <Button onClick={() => setIsCreateOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Announcement
+                </Button>
+              }
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -111,9 +177,7 @@ export function AnnouncementsView() {
                       {announcement.title}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getTypeColor(announcement.type)}>
-                        {announcement.type}
-                      </Badge>
+                      {getTypeBadge(announcement.type)}
                     </TableCell>
                     <TableCell>
                       <Switch
@@ -130,24 +194,28 @@ export function AnnouncementsView() {
                       {formatDate(announcement.createdAt)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingAnnouncement(announcement)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => setDeletingId(announcement.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingAnnouncement(announcement)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600"
+                            onClick={() => setDeletingId(announcement.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

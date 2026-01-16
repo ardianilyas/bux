@@ -30,37 +30,93 @@ import {
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { PaginationControl } from "@/components/ui/pagination-control";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, MessageCircle, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  Plus,
+  MessageCircle,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Circle,
+  Timer,
+  CheckCircle2,
+  XCircle,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Siren,
+  ArrowRight
+} from "lucide-react";
 import { useTicket, type Priority, type Category } from "../hooks/use-ticket";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 
-const getPriorityColor = (priority: string) => {
+const getPriorityBadge = (priority: string) => {
   switch (priority) {
     case "urgent":
-      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50">
+          <Siren className="h-3 w-3" />
+          Urgent
+        </Badge>
+      );
     case "high":
-      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+      return (
+        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 gap-1 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50">
+          <ArrowUp className="h-3 w-3" />
+          High
+        </Badge>
+      );
     case "medium":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+      return (
+        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 gap-1 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/50">
+          <ArrowRight className="h-3 w-3" />
+          Medium
+        </Badge>
+      );
     case "low":
-      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50">
+          <ArrowDown className="h-3 w-3" />
+          Low
+        </Badge>
+      );
     default:
-      return "bg-gray-100 text-gray-700";
+      return <Badge variant="outline">{priority}</Badge>;
   }
 };
 
-const getStatusColor = (status: string) => {
+const getStatusBadge = (status: string) => {
   switch (status) {
     case "open":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50">
+          <Circle className="h-3 w-3" />
+          Open
+        </Badge>
+      );
     case "in_progress":
-      return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+      return (
+        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 gap-1 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50">
+          <Timer className="h-3 w-3" />
+          In Progress
+        </Badge>
+      );
     case "resolved":
-      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50">
+          <CheckCircle2 className="h-3 w-3" />
+          Resolved
+        </Badge>
+      );
     case "closed":
-      return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+      return (
+        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 gap-1 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-900/50">
+          <XCircle className="h-3 w-3" />
+          Closed
+        </Badge>
+      );
     default:
-      return "bg-gray-100 text-gray-700";
+      return <Badge variant="outline">{status}</Badge>;
   }
 };
 
@@ -203,14 +259,17 @@ export function SupportView() {
       </div>
 
       {tickets?.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <MessageCircle className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">
-              No tickets yet. Create one if you need help!
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={MessageCircle}
+          title="No tickets yet"
+          description="You haven't created any support tickets yet. If you need help, feel free to create one."
+          action={
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Ticket
+            </Button>
+          }
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tickets?.map((ticket: any) => (
@@ -251,12 +310,8 @@ export function SupportView() {
                   )}
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <Badge className={getStatusColor(ticket.status)} variant="secondary">
-                    {formatStatus(ticket.status)}
-                  </Badge>
-                  <Badge className={getPriorityColor(ticket.priority)} variant="secondary">
-                    {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
-                  </Badge>
+                  {getStatusBadge(ticket.status)}
+                  {getPriorityBadge(ticket.priority)}
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
@@ -267,17 +322,20 @@ export function SupportView() {
             </Card>
           ))}
         </div>
-      )}
+      )
+      }
 
-      {pagination && (
-        <div className="flex justify-end mt-4">
-          <PaginationControl
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
+      {
+        pagination && (
+          <div className="flex justify-end mt-4">
+            <PaginationControl
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )
+      }
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => {
@@ -359,6 +417,6 @@ export function SupportView() {
         description="Are you sure you want to delete this ticket? This action cannot be undone."
         isDeleting={isDeleting}
       />
-    </div>
+    </div >
   );
 }

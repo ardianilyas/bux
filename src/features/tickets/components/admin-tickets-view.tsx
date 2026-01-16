@@ -23,39 +23,144 @@ import { formatDistanceToNow } from "date-fns";
 import { useAdminTicket, type Priority, type Status } from "../hooks/use-ticket";
 import Link from "next/link";
 import { PaginationControl } from "@/components/ui/pagination-control";
+import { EmptyState } from "@/components/empty-state";
+import {
+  Siren,
+  ArrowUp,
+  ArrowRight,
+  ArrowDown,
+  Circle,
+  Timer,
+  CheckCircle2,
+  XCircle,
+  Bug,
+  Zap,
+  User,
+  CreditCard,
+  MessageSquare,
+  MessageCircle,
+  MoreVertical,
+  Eye
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
-const getPriorityColor = (priority: string) => {
+const getPriorityBadge = (priority: string) => {
   switch (priority) {
     case "urgent":
-      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      return (
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50">
+          <Siren className="h-3 w-3" />
+          Urgent
+        </Badge>
+      );
     case "high":
-      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+      return (
+        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 gap-1 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50">
+          <ArrowUp className="h-3 w-3" />
+          High
+        </Badge>
+      );
     case "medium":
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+      return (
+        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 gap-1 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/50">
+          <ArrowRight className="h-3 w-3" />
+          Medium
+        </Badge>
+      );
     case "low":
-      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50">
+          <ArrowDown className="h-3 w-3" />
+          Low
+        </Badge>
+      );
     default:
-      return "bg-gray-100 text-gray-700";
+      return <Badge variant="outline">{priority}</Badge>;
   }
 };
 
-const getStatusColor = (status: string) => {
+const getStatusBadge = (status: string) => {
   switch (status) {
     case "open":
-      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50">
+          <Circle className="h-3 w-3" />
+          Open
+        </Badge>
+      );
     case "in_progress":
-      return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+      return (
+        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 gap-1 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/50">
+          <Timer className="h-3 w-3" />
+          In Progress
+        </Badge>
+      );
     case "resolved":
-      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/50">
+          <CheckCircle2 className="h-3 w-3" />
+          Resolved
+        </Badge>
+      );
     case "closed":
-      return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+      return (
+        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 gap-1 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-900/50">
+          <XCircle className="h-3 w-3" />
+          Closed
+        </Badge>
+      );
     default:
-      return "bg-gray-100 text-gray-700";
+      return <Badge variant="outline">{status}</Badge>;
   }
 };
 
-const formatStatus = (status: string) => {
-  return status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
+const getCategoryBadge = (category: string) => {
+  switch (category) {
+    case "bug":
+      return (
+        <Badge variant="outline" className="gap-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50">
+          <Bug className="h-3 w-3" />
+          Bug Report
+        </Badge>
+      );
+    case "feature":
+      return (
+        <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/50">
+          <Zap className="h-3 w-3" />
+          Feature Request
+        </Badge>
+      );
+    case "account":
+      return (
+        <Badge variant="outline" className="gap-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50">
+          <User className="h-3 w-3" />
+          Account
+        </Badge>
+      );
+    case "billing":
+      return (
+        <Badge variant="outline" className="gap-1 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50">
+          <CreditCard className="h-3 w-3" />
+          Billing
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="gap-1 bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-900/50">
+          <MessageSquare className="h-3 w-3" />
+          General
+        </Badge>
+      );
+  }
 };
 
 export function AdminTicketsView() {
@@ -103,87 +208,129 @@ export function AdminTicketsView() {
                 <TableHead>Status</TableHead>
                 <TableHead>Assigned To</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead></TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tickets?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No tickets found
+                  <TableCell colSpan={8}>
+                    <EmptyState
+                      icon={MessageCircle}
+                      title="No tickets found"
+                      description="There are no tickets matching your criteria."
+                      className="border-0 shadow-none min-h-[300px]"
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
                 tickets?.map((ticket) => (
                   <TableRow key={ticket.id}>
-                    <TableCell className="font-medium max-w-[200px] truncate">
+                    <TableCell className="font-medium max-w-[250px] truncate">
                       {ticket.subject}
                     </TableCell>
                     <TableCell>{ticket.user?.name || "Unknown"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {ticket.category.charAt(0).toUpperCase() + ticket.category.slice(1)}
-                      </Badge>
+                      {getCategoryBadge(ticket.category)}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={ticket.priority}
-                        onValueChange={(v) => handleUpdatePriority(ticket.id, v as Priority)}
-                      >
-                        <SelectTrigger className="w-[100px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {getPriorityBadge(ticket.priority)}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={ticket.status}
-                        onValueChange={(v) => handleUpdateStatus(ticket.id, v as Status)}
-                      >
-                        <SelectTrigger className="w-[120px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {getStatusBadge(ticket.status)}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={ticket.assignedToId || "unassigned"}
-                        onValueChange={(v) => handleAssign(ticket.id, v === "unassigned" ? null : v)}
-                      >
-                        <SelectTrigger className="w-[140px] h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {admins?.map((admin: any) => (
-                            <SelectItem key={admin.id} value={admin.id}>
-                              {admin.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <span className="text-sm">
+                        {ticket.assignedTo?.name || (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/dashboard/admin/tickets/${ticket.id}`}>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
-                      </Link>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                              Change Priority
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "urgent")}>
+                                <Siren className="mr-2 h-4 w-4 text-red-600" />
+                                Urgent
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "high")}>
+                                <ArrowUp className="mr-2 h-4 w-4 text-orange-600" />
+                                High
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "medium")}>
+                                <ArrowRight className="mr-2 h-4 w-4 text-yellow-600" />
+                                Medium
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "low")}>
+                                <ArrowDown className="mr-2 h-4 w-4 text-green-600" />
+                                Low
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Circle className="mr-2 h-4 w-4" />
+                              Change Status
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "open")}>
+                                <Circle className="mr-2 h-4 w-4 text-blue-600" />
+                                Open
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "in_progress")}>
+                                <Timer className="mr-2 h-4 w-4 text-purple-600" />
+                                In Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "resolved")}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                                Resolved
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "closed")}>
+                                <XCircle className="mr-2 h-4 w-4 text-gray-600" />
+                                Closed
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <User className="mr-2 h-4 w-4" />
+                              Assign To
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem onClick={() => handleAssign(ticket.id, null)}>
+                                Unassigned
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {admins?.map((admin: any) => (
+                                <DropdownMenuItem key={admin.id} onClick={() => handleAssign(ticket.id, admin.id)}>
+                                  {admin.name}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/admin/tickets/${ticket.id}`} className="cursor-pointer">
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))

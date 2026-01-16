@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,16 @@ import Link from "next/link";
 import { PaginationControl } from "@/components/ui/pagination-control";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
+import { AUDIT_ACTIONS } from "@/lib/audit-constants";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AuditLogsView() {
   const [page, setPage] = useState(1);
@@ -41,6 +51,12 @@ export function AuditLogsView() {
     return "outline";
   };
 
+  // Group actions for the dropdown
+  const groupedActions = Object.entries(AUDIT_ACTIONS).map(([key, actions]) => ({
+    label: key.charAt(0) + key.slice(1).toLowerCase(),
+    actions: Object.values(actions),
+  }));
+
   return (
     <div className="space-y-6">
       <div>
@@ -57,15 +73,33 @@ export function AuditLogsView() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search by action..."
-                value={actionFilter}
-                onChange={(e) => {
-                  setActionFilter(e.target.value);
-                  setPage(1); // Reset to first page on filter change
-                }}
-              />
+            <div>
+              <div className="md:w-[250px]">
+                <Select
+                  value={actionFilter}
+                  onValueChange={(value) => {
+                    setActionFilter(value === "all" ? "" : value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Actions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Actions</SelectItem>
+                    {groupedActions.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.actions.map((action) => (
+                          <SelectItem key={action} value={action}>
+                            {action}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <DatePickerWithRange // @ts-ignore

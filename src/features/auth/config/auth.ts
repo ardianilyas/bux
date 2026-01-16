@@ -5,7 +5,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count } from "drizzle-orm";
 import { USER_ROLE } from "@/lib/constants";
-import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { logAudit } from "@/lib/audit-logger";
+import { AUDIT_ACTIONS } from "@/lib/audit-constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const auth = betterAuth({
