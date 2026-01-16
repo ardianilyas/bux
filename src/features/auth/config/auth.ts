@@ -3,6 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { count } from "drizzle-orm";
+import { USER_ROLE } from "@/lib/constants";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -14,6 +16,24 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // First registered user becomes superadmin
+          const [result] = await db.select({ count: count() }).from(schema.users);
+          const isFirstUser = result.count === 0;
+
+          return {
+            data: {
+              ...user,
+              role: isFirstUser ? USER_ROLE.SUPERADMIN : USER_ROLE.USER,
+            },
+          };
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -46,3 +66,4 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+

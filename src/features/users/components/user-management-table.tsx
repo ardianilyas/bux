@@ -13,8 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useSession } from "@/features/auth/hooks/use-auth";
+import { USER_ROLE } from "@/lib/constants";
 
 type User = {
   id: string;
@@ -26,6 +35,10 @@ type User = {
 };
 
 export function UserManagementTable() {
+  const { data: session } = useSession();
+  const currentUserRole = (session?.user as any)?.role || "user";
+  const isSuperadmin = currentUserRole === USER_ROLE.SUPERADMIN;
+
   const { data: users, isLoading } = trpc.user.list.useQuery();
   const utils = trpc.useUtils();
 
@@ -39,8 +52,22 @@ export function UserManagementTable() {
     },
   });
 
+  const updateRoleMutation = trpc.user.updateRole.useMutation({
+    onSuccess: () => {
+      toast.success("User role updated");
+      utils.user.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update user role");
+    },
+  });
+
   const handleStatusChange = (userId: string, status: "active" | "suspended" | "banned") => {
     updateStatusMutation.mutate({ userId, status });
+  };
+
+  const handleRoleChange = (userId: string, role: "user" | "admin") => {
+    updateRoleMutation.mutate({ userId, role });
   };
 
   const getStatusColor = (status: string) => {
@@ -56,12 +83,34 @@ export function UserManagementTable() {
     }
   };
 
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "superadmin":
+        return "bg-purple-500/10 text-purple-500 border-purple-500/30";
+      case "admin":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/30";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     }).format(new Date(date));
+  };
+
+  // Check if current user can modify this user
+  const canModify = (user: User) => {
+    // Cannot modify superadmins unless you are also superadmin
+    if (user.role === USER_ROLE.SUPERADMIN) return false;
+    // Cannot modify admins unless you are superadmin
+    if (user.role === USER_ROLE.ADMIN && !isSuperadmin) return false;
+    // Cannot modify yourself
+    if (user.id === (session?.user as any)?.id) return false;
+    return true;
   };
 
   if (isLoading) {
@@ -102,9 +151,25 @@ export function UserManagementTable() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{user.email}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">
-                    {user.role}
-                  </Badge>
+                  {isSuperadmin && user.role !== USER_ROLE.SUPERADMIN && user.id !== (session?.user as any)?.id ? (
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) => handleRoleChange(user.id, value as "user" | "admin")}
+                      disabled={updateRoleMutation.isPending}
+                    >
+                      <SelectTrigger className="w-24 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">user</SelectItem>
+                        <SelectItem value="admin">admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className={`capitalize ${getRoleColor(user.role)}`}>
+                      {user.role}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(user.status)}>
@@ -116,7 +181,7 @@ export function UserManagementTable() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    {user.status !== "active" && (
+                    {canModify(user) && user.status !== "active" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -126,7 +191,7 @@ export function UserManagementTable() {
                         Activate
                       </Button>
                     )}
-                    {user.status !== "suspended" && user.role !== "admin" && (
+                    {canModify(user) && user.status !== "suspended" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -136,7 +201,7 @@ export function UserManagementTable() {
                         Suspend
                       </Button>
                     )}
-                    {user.status !== "banned" && user.role !== "admin" && (
+                    {canModify(user) && user.status !== "banned" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -146,6 +211,9 @@ export function UserManagementTable() {
                       >
                         Ban
                       </Button>
+                    )}
+                    {!canModify(user) && (
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
                 </TableCell>
@@ -157,3 +225,4 @@ export function UserManagementTable() {
     </Card>
   );
 }
+

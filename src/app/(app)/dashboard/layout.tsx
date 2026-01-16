@@ -347,7 +347,7 @@ export default function DashboardLayout({
   };
 
   const role = (user as any)?.role || (session?.user as any)?.role;
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "superadmin";
 
   // Use store for display, fallback to session if store is empty
   const displayName = user?.name || session?.user?.name || "User";

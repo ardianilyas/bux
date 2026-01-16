@@ -7,6 +7,7 @@ export type AuditAction =
   | "user.ban"
   | "user.suspend"
   | "user.activate"
+  | "user.update_role"
   | "expense.create"
   | "expense.update"
   | "expense.delete"
@@ -36,6 +37,7 @@ export const AUDIT_ACTIONS = {
     BAN: "user.ban" as const,
     SUSPEND: "user.suspend" as const,
     ACTIVATE: "user.activate" as const,
+    UPDATE_ROLE: "user.update_role" as const,
   },
   EXPENSE: {
     CREATE: "expense.create" as const,
