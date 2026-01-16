@@ -17,6 +17,7 @@ import {
 import { useAuditLogs } from "../hooks/use-audit";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 export function AuditLogsView() {
   const [page, setPage] = useState(1);
@@ -166,29 +167,12 @@ export function AuditLogsView() {
 
               {/* Pagination */}
               {data && data.pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between p-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    Page {data.pagination.page} of{" "}
-                    {data.pagination.totalPages} ({data.pagination.total} total)
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => p + 1)}
-                      disabled={page >= data.pagination.totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
+                <div className="flex justify-end mt-4">
+                  <PaginationControl
+                    currentPage={data.pagination.page}
+                    totalPages={data.pagination.totalPages}
+                    onPageChange={setPage}
+                  />
                 </div>
               )}
             </>

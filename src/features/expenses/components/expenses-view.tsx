@@ -18,6 +18,7 @@ import {
 } from "@/features/expenses";
 import { ReceiptUpload } from "@/features/receipts";
 import { useExpenseManagement } from "../hooks/use-expense-management";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 export function ExpensesView() {
   const {
@@ -43,6 +44,9 @@ export function ExpensesView() {
     handleExportCsv,
     openEditDialog,
     resetForm,
+    pagination,
+    page,
+    setPage,
   } = useExpenseManagement();
 
   if (expensesLoading) {
@@ -176,6 +180,16 @@ export function ExpensesView() {
         description="Are you sure you want to delete this expense? This action cannot be undone."
         isDeleting={deleteMutation.isPending}
       />
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
     </div>
   );
 }
