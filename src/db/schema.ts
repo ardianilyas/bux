@@ -20,6 +20,8 @@ export const users = pgTable("users", {
   image: text("image"),
   role: text("role").notNull().default("user"),
   status: text("status").notNull().default("active"),
+  statusReason: text("status_reason"),
+  statusExpiresAt: timestamp("status_expires_at"),
   currency: text("currency").notNull().default("IDR"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

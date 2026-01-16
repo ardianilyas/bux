@@ -20,10 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useSession } from "@/features/auth/hooks/use-auth";
 import { USER_ROLE } from "@/lib/constants";
+import { StatusChangeDialog } from "./status-change-dialog";
 
 type User = {
   id: string;
@@ -31,6 +38,8 @@ type User = {
   email: string;
   role: string;
   status: string;
+  statusReason: string | null;
+  statusExpiresAt: Date | null;
   createdAt: Date;
 };
 
@@ -42,10 +51,19 @@ export function UserManagementTable() {
   const { data: users, isLoading } = trpc.user.list.useQuery();
   const utils = trpc.useUtils();
 
+  // Dialog state for ban/suspend
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    user: User;
+    status: "suspended" | "banned";
+  } | null>(null);
+
   const updateStatusMutation = trpc.user.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("User status updated");
       utils.user.list.invalidate();
+      setDialogOpen(false);
+      setPendingAction(null);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update user status");
@@ -62,8 +80,23 @@ export function UserManagementTable() {
     },
   });
 
-  const handleStatusChange = (userId: string, status: "active" | "suspended" | "banned") => {
-    updateStatusMutation.mutate({ userId, status });
+  const handleActivate = (userId: string) => {
+    updateStatusMutation.mutate({ userId, status: "active" });
+  };
+
+  const handleOpenStatusDialog = (user: User, status: "suspended" | "banned") => {
+    setPendingAction({ user, status });
+    setDialogOpen(true);
+  };
+
+  const handleConfirmStatusChange = (reason: string, durationDays: number | undefined) => {
+    if (!pendingAction) return;
+    updateStatusMutation.mutate({
+      userId: pendingAction.user.id,
+      status: pendingAction.status,
+      reason,
+      durationDays,
+    });
   };
 
   const handleRoleChange = (userId: string, role: "user" | "admin") => {
@@ -104,11 +137,8 @@ export function UserManagementTable() {
 
   // Check if current user can modify this user
   const canModify = (user: User) => {
-    // Cannot modify superadmins unless you are also superadmin
     if (user.role === USER_ROLE.SUPERADMIN) return false;
-    // Cannot modify admins unless you are superadmin
     if (user.role === USER_ROLE.ADMIN && !isSuperadmin) return false;
-    // Cannot modify yourself
     if (user.id === (session?.user as any)?.id) return false;
     return true;
   };
@@ -127,102 +157,133 @@ export function UserManagementTable() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-foreground">All Users</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users?.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium text-foreground">
-                  {user.name}
-                </TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                <TableCell>
-                  {isSuperadmin && user.role !== USER_ROLE.SUPERADMIN && user.id !== (session?.user as any)?.id ? (
-                    <Select
-                      value={user.role}
-                      onValueChange={(value) => handleRoleChange(user.id, value as "user" | "admin")}
-                      disabled={updateRoleMutation.isPending}
-                    >
-                      <SelectTrigger className="w-24 h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">user</SelectItem>
-                        <SelectItem value="admin">admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant="outline" className={`capitalize ${getRoleColor(user.role)}`}>
-                      {user.role}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(user.status)}>
-                    {user.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(user.createdAt)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    {canModify(user) && user.status !== "active" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(user.id, "active")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        Activate
-                      </Button>
-                    )}
-                    {canModify(user) && user.status !== "suspended" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(user.id, "suspended")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        Suspend
-                      </Button>
-                    )}
-                    {canModify(user) && user.status !== "banned" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => handleStatusChange(user.id, "banned")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        Ban
-                      </Button>
-                    )}
-                    {!canModify(user) && (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </div>
-                </TableCell>
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-foreground">All Users</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {users?.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium text-foreground">
+                    {user.name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    {isSuperadmin && user.role !== USER_ROLE.SUPERADMIN && user.id !== (session?.user as any)?.id ? (
+                      <Select
+                        value={user.role}
+                        onValueChange={(value) => handleRoleChange(user.id, value as "user" | "admin")}
+                        disabled={updateRoleMutation.isPending}
+                      >
+                        <SelectTrigger className="w-24 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">user</SelectItem>
+                          <SelectItem value="admin">admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge variant="outline" className={`capitalize ${getRoleColor(user.role)}`}>
+                        {user.role}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.statusReason ? (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Badge className={`cursor-help ${getStatusColor(user.status)}`}>
+                            {user.status}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="font-medium">Reason:</p>
+                          <p className="text-sm">{user.statusReason}</p>
+                          {user.statusExpiresAt && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Expires: {formatDate(user.statusExpiresAt)}
+                            </p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Badge className={getStatusColor(user.status)}>
+                        {user.status}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(user.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {canModify(user) && user.status !== "active" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleActivate(user.id)}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                      {canModify(user) && user.status !== "suspended" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenStatusDialog(user as User, "suspended")}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Suspend
+                        </Button>
+                      )}
+                      {canModify(user) && user.status !== "banned" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600"
+                          onClick={() => handleOpenStatusDialog(user as User, "banned")}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Ban
+                        </Button>
+                      )}
+                      {!canModify(user) && (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <StatusChangeDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        targetUser={pendingAction?.user ?? null}
+        newStatus={pendingAction?.status ?? null}
+        onConfirm={handleConfirmStatusChange}
+        isLoading={updateStatusMutation.isPending}
+      />
+    </TooltipProvider>
   );
 }
+
 

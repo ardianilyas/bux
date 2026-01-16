@@ -30,12 +30,19 @@ export const userRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         status: z.enum(["active", "suspended", "banned"]),
+        reason: z.string().optional(),
+        durationDays: z.number().positive().optional(), // null = permanent
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Only admins and superadmins can update user status
       if (!isAdmin(ctx.session.user.role)) {
         throw new Error("Unauthorized");
+      }
+
+      // Require reason for ban/suspend
+      if ((input.status === "banned" || input.status === "suspended") && !input.reason) {
+        throw new Error("Reason is required for banning or suspending users");
       }
 
       // Prevent modifying superadmin status unless you are also superadmin
@@ -47,10 +54,23 @@ export const userRouter = createTRPCRouter({
         throw new Error("Cannot modify superadmin status");
       }
 
+      // Calculate expiration date if duration provided
+      let statusExpiresAt: Date | null = null;
+      if (input.durationDays && input.status !== "active") {
+        statusExpiresAt = new Date();
+        statusExpiresAt.setDate(statusExpiresAt.getDate() + input.durationDays);
+      }
+
+      // Clear reason and expiration when activating
+      const statusReason = input.status === "active" ? null : (input.reason || null);
+      const expiresAt = input.status === "active" ? null : statusExpiresAt;
+
       const [updatedUser] = await db
         .update(users)
         .set({
           status: input.status,
+          statusReason: statusReason,
+          statusExpiresAt: expiresAt,
           updatedAt: new Date(),
         })
         .where(eq(users.id, input.userId))
@@ -71,8 +91,10 @@ export const userRouter = createTRPCRouter({
         targetId: input.userId,
         targetType: "user",
         metadata: {
-          previousStatus: updatedUser.status,
+          previousStatus: targetUser?.status,
           newStatus: input.status,
+          reason: statusReason,
+          expiresAt: expiresAt?.toISOString(),
         },
         ipAddress,
         userAgent,
