@@ -74,9 +74,14 @@ src/
 │   ├── audit/            # Audit logs and security tracking
 │   └── auth/             # Authentication
 ├── components/            # Shared components
-│   └── ui/               # Shadcn UI components
+│   ├── ui/               # Shadcn UI components
+│   └── empty-state.tsx   # Reusable empty state component
 ├── db/                    # Database schema and config
-├── lib/                   # Shared utilities (currency, validation, audit-logger, etc.)
+├── lib/                   # Shared utilities
+│   ├── currency.ts       # Currency conversion
+│   ├── audit-logger.ts   # Security audit logging
+│   ├── audit-constants.ts # Audit action types (client-safe)
+│   └── ...
 └── trpc/                  # tRPC configuration
 ```
 
