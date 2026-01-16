@@ -13,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +26,30 @@ import { useSession } from "@/features/auth/hooks/use-auth";
 import { USER_ROLE } from "@/lib/constants";
 import { StatusChangeDialog } from "./status-change-dialog";
 import { PaginationControl } from "@/components/ui/pagination-control";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuPortal
+} from "@/components/ui/dropdown-menu";
+import {
+  MoreHorizontal,
+  Shield,
+  User as UserIcon,
+  Ban,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  ShieldAlert
+} from "lucide-react";
 
 type User = {
   id: string;
@@ -122,6 +140,19 @@ export function UserManagementTable() {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle2 className="h-3 w-3 mr-1" />;
+      case "suspended":
+        return <AlertTriangle className="h-3 w-3 mr-1" />;
+      case "banned":
+        return <Ban className="h-3 w-3 mr-1" />;
+      default:
+        return null;
+    }
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case "superadmin":
@@ -130,6 +161,17 @@ export function UserManagementTable() {
         return "bg-blue-500/10 text-blue-500 border-blue-500/30";
       default:
         return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case "superadmin":
+        return <ShieldAlert className="h-3 w-3 mr-1" />;
+      case "admin":
+        return <Shield className="h-3 w-3 mr-1" />;
+      default:
+        return <UserIcon className="h-3 w-3 mr-1" />;
     }
   };
 
@@ -188,31 +230,17 @@ export function UserManagementTable() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
-                    {isSuperadmin && user.role !== USER_ROLE.SUPERADMIN && user.id !== (session?.user as any)?.id ? (
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleRoleChange(user.id, value as "user" | "admin")}
-                        disabled={updateRoleMutation.isPending}
-                      >
-                        <SelectTrigger className="w-24 h-7 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">user</SelectItem>
-                          <SelectItem value="admin">admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge variant="outline" className={`capitalize ${getRoleColor(user.role)}`}>
-                        {user.role}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className={`capitalize ${getRoleColor(user.role)}`}>
+                      {getRoleIcon(user.role)}
+                      {user.role}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {user.statusReason ? (
                       <Tooltip>
                         <TooltipTrigger>
                           <Badge className={`cursor-help ${getStatusColor(user.status)}`}>
+                            {getStatusIcon(user.status)}
                             {user.status}
                           </Badge>
                         </TooltipTrigger>
@@ -228,6 +256,7 @@ export function UserManagementTable() {
                       </Tooltip>
                     ) : (
                       <Badge className={getStatusColor(user.status)}>
+                        {getStatusIcon(user.status)}
                         {user.status}
                       </Badge>
                     )}
@@ -236,42 +265,74 @@ export function UserManagementTable() {
                     {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      {canModify(user) && user.status !== "active" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleActivate(user.id)}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          Activate
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                      )}
-                      {canModify(user) && user.status !== "suspended" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenStatusDialog(user as User, "suspended")}
-                          disabled={updateStatusMutation.isPending}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigator.clipboard.writeText(user.id);
+                            toast.success("User ID copied to clipboard");
+                          }}
                         >
-                          Suspend
-                        </Button>
-                      )}
-                      {canModify(user) && user.status !== "banned" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-500 hover:text-red-600"
-                          onClick={() => handleOpenStatusDialog(user as User, "banned")}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          Ban
-                        </Button>
-                      )}
-                      {!canModify(user) && (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </div>
+                          Copy User ID
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        {isSuperadmin && user.role !== USER_ROLE.SUPERADMIN && user.id !== (session?.user as any)?.id && (
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Shield className="mr-2 h-4 w-4" />
+                              <span>Change Role</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as "user" | "admin")}>
+                                  <DropdownMenuRadioItem value="user">
+                                    <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    User
+                                  </DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem value="admin">
+                                    <Shield className="mr-2 h-4 w-4 text-blue-500" />
+                                    Admin
+                                  </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                        )}
+
+                        {canModify(user) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            {user.status !== "active" && (
+                              <DropdownMenuItem onClick={() => handleActivate(user.id)}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" />
+                                Activate
+                              </DropdownMenuItem>
+                            )}
+                            {user.status !== "suspended" && (
+                              <DropdownMenuItem onClick={() => handleOpenStatusDialog(user as User, "suspended")}>
+                                <AlertTriangle className="mr-2 h-4 w-4 text-amber-500" />
+                                Suspend
+                              </DropdownMenuItem>
+                            )}
+                            {user.status !== "banned" && (
+                              <DropdownMenuItem onClick={() => handleOpenStatusDialog(user as User, "banned")} className="text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/20">
+                                <Ban className="mr-2 h-4 w-4" />
+                                Ban User
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

@@ -3,6 +3,7 @@
 import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Users, CheckCircle2, AlertTriangle, Ban } from "lucide-react";
 
 export function UserStatsCards() {
   const { data: stats, isLoading } = trpc.user.getStats.useQuery();
@@ -32,32 +33,36 @@ export function UserStatsCards() {
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <Card>
-        <CardHeader className="pb-2">
-          <p className="text-sm text-muted-foreground">Total Users</p>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+          <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-foreground">{totalUsers}</div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="pb-2">
-          <p className="text-sm text-muted-foreground">Active</p>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <p className="text-sm font-medium text-muted-foreground">Active</p>
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-emerald-500">{activeUsers}</div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="pb-2">
-          <p className="text-sm text-muted-foreground">Suspended</p>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <p className="text-sm font-medium text-muted-foreground">Suspended</p>
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-amber-500">{suspendedUsers}</div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="pb-2">
-          <p className="text-sm text-muted-foreground">Banned</p>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <p className="text-sm font-medium text-muted-foreground">Banned</p>
+          <Ban className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-500">{bannedUsers}</div>
