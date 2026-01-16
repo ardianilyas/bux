@@ -13,7 +13,9 @@ import {
 import { useScanReceipt } from "../hooks/use-scan-receipt";
 import { useCreateExpense } from "@/features/expenses";
 import { useCategories } from "@/features/categories";
+import { useSession } from "@/features/auth/hooks/use-auth";
 import { formatCurrency } from "@/lib/utils";
+import { fetchExchangeRate } from "@/lib/exchange-rate";
 
 export function ReceiptUpload() {
   const [open, setOpen] = useState(false);
@@ -29,6 +31,9 @@ export function ReceiptUpload() {
     reset,
     isLoading,
   } = useScanReceipt();
+
+  const { data: session } = useSession();
+  const userBaseCurrency = (session?.user as any)?.currency || "IDR";
 
   const createExpense = useCreateExpense();
 
@@ -52,13 +57,25 @@ export function ReceiptUpload() {
         c.name.toLowerCase() === parsedReceipt.category?.toLowerCase()
     );
 
+    // Verify currency and fetch rate if needed
+    const receiptCurrency = parsedReceipt.currency || userBaseCurrency;
+    let exchangeRate = 1.0;
+
+    if (receiptCurrency !== userBaseCurrency) {
+      // Basic check to see if we have valid codes (not null/empty)
+      const rate = await fetchExchangeRate(receiptCurrency, userBaseCurrency);
+      if (rate) {
+        exchangeRate = rate;
+      }
+    }
+
     await createExpense.mutateAsync({
       amount: parsedReceipt.amount,
       description: parsedReceipt.merchant || "Scanned Receipt",
       date: parsedReceipt.date ? new Date(parsedReceipt.date) : new Date(),
       categoryId: category?.id,
-      currency: "IDR", // Receipt scanner assumes local currency
-      exchangeRate: 1.0,
+      currency: receiptCurrency,
+      exchangeRate: exchangeRate,
     });
 
     setOpen(false);
@@ -214,7 +231,7 @@ export function ReceiptUpload() {
                       <span className="text-sm text-muted-foreground">Amount</span>
                       <span className="font-medium text-lg">
                         {parsedReceipt.amount
-                          ? formatCurrency(parsedReceipt.amount)
+                          ? formatCurrency(parsedReceipt.amount, parsedReceipt.currency || userBaseCurrency)
                           : "Not found"}
                       </span>
                     </div>

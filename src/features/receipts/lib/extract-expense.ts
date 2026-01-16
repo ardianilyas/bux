@@ -18,7 +18,7 @@ OUTPUT SCHEMA (return exactly this structure):
   "merchant": "string or null",
   "date": "YYYY-MM-DD or null",
   "amount": number or null,
-  "currency": "string or null",
+  "currency": "string or null", // ISO 4217 code (e.g. USD, IDR, EUR). Default to null if not found.
   "category": "string or null", // One of the provided categories or null
   "items": [{ "name": "string", "price": number }] or null,
   "confidence": "high" | "medium" | "low"

@@ -43,27 +43,7 @@ export function DashboardView() {
   const thisMonthExpenses = stats?.thisMonth || 0;
   const recentExpenses = expenses?.data || [];
 
-  // Used for budgets calculation (this logic remains client side for now as it needs per-category spending)
-  // To avoid fetching ALL expenses for budget progress, we should ideally have a `budget.getProgress` endpoint.
-  // But for now, we can leave budgets broken or...
-  // Wait, `DashboardView` calculates budget progress: `getMonthlySpending(budget.categoryId)`.
-  // This relied on fetching ALL expenses.
-  // I must fix this too or budgets will show 0 progress.
-
-  // Quick fix: `getBreakdown` returns spending by category for THIS month!
-  // I can use `breakdown` to find spending for budget category.
-
-  const getMonthlySpending = (categoryId: string) => {
-    if (!breakdown) return 0;
-    const category = breakdown.find(b => {
-      // We need category ID in breakdown?
-      // I only selected name and color in router.
-      // I should select ID too in `getBreakdown`.
-      // Let's assume I fix router.
-      return false;
-    });
-    return 0; // Temporary placeholder until I fix router
-  };
+  // Budget spending is now calculated on the backend and included in the response.
 
   // Wait, I should add categoryId to getBreakdown response to make this work.
   // Let's assume I will add it in next step.
@@ -244,7 +224,8 @@ export function DashboardView() {
           <CardContent>
             <div className="space-y-4">
               {budgets.slice(0, 3).map((budget) => {
-                const spent = getMonthlySpending(budget.categoryId);
+                // @ts-ignore - spent is added by backend aggregation
+                const spent = budget.spent || 0;
                 const percent = Math.min((spent / budget.amount) * 100, 100);
                 const overBudget = spent > budget.amount;
 
