@@ -15,6 +15,13 @@
       "when": 1768488140055,
       "tag": "0001_far_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768546614110,
+      "tag": "0002_cynical_orphan",
+      "breakpoints": true
     }
   ]
 }

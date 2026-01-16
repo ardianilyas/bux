@@ -22,7 +22,11 @@ export type AuditAction =
   | "ticket.create"
   | "ticket.update"
   | "ticket.close"
-  | "subscription.process";
+  | "subscription.process"
+  | "savings_goal.create"
+  | "savings_goal.update"
+  | "savings_goal.delete"
+  | "savings_goal.add_funds";
 
 // Action constants to avoid magic strings
 export const AUDIT_ACTIONS = {
@@ -60,6 +64,12 @@ export const AUDIT_ACTIONS = {
   },
   SUBSCRIPTION: {
     PROCESS: "subscription.process" as const,
+  },
+  SAVINGS_GOAL: {
+    CREATE: "savings_goal.create" as const,
+    UPDATE: "savings_goal.update" as const,
+    DELETE: "savings_goal.delete" as const,
+    ADD_FUNDS: "savings_goal.add_funds" as const,
   },
 } as const;
 

@@ -177,6 +177,21 @@ export const ticketMessages = pgTable("ticket_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const savingsGoals = pgTable("savings_goals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  targetAmount: real("target_amount").notNull(),
+  currentAmount: real("current_amount").notNull().default(0),
+  currency: text("currency").notNull().default("IDR"),
+  color: text("color").notNull().default("#6366f1"),
+  targetDate: timestamp("target_date"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -188,6 +203,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   tickets: many(tickets),
   ticketMessages: many(ticketMessages),
+  savingsGoals: many(savingsGoals),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -254,6 +270,10 @@ export const ticketMessagesRelations = relations(ticketMessages, ({ one }) => ({
   }),
 }));
 
+export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
+  user: one(users, { fields: [savingsGoals.userId], references: [users.id] }),
+}));
+
 // ==================== Audit Logs ====================
 
 export const auditLogs = pgTable("audit_logs", {
@@ -296,4 +316,6 @@ export type TicketMessage = typeof ticketMessages.$inferSelect;
 export type NewTicketMessage = typeof ticketMessages.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type SavingsGoal = typeof savingsGoals.$inferSelect;
+export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
 
