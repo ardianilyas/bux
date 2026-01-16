@@ -6,45 +6,15 @@ import { formatCurrency } from "@/lib/utils";
 import { convertToBaseCurrency } from "@/lib/currency-conversion";
 
 interface CategoryBreakdownChartProps {
-  expenses: {
-    id: string;
+  data: {
+    name: string;
     amount: number;
-    currency: string;
-    exchangeRate: number;
-    category: { id: string; name: string; color: string } | null;
+    color: string;
   }[];
   userBaseCurrency: string;
 }
 
-export function CategoryBreakdownChart({ expenses, userBaseCurrency }: CategoryBreakdownChartProps) {
-  // Group expenses by category (converted to base currency)
-  const getCategoryData = () => {
-    const categoryTotals: { [key: string]: { name: string; amount: number; color: string } } = {};
-
-    expenses.forEach((expense) => {
-      const categoryName = expense.category?.name || "Uncategorized";
-      const categoryColor = expense.category?.color || "#6b7280";
-
-      if (!categoryTotals[categoryName]) {
-        categoryTotals[categoryName] = {
-          name: categoryName,
-          amount: 0,
-          color: categoryColor,
-        };
-      }
-      const convertedAmount = convertToBaseCurrency(expense, userBaseCurrency);
-      categoryTotals[categoryName].amount += convertedAmount;
-    });
-
-    return Object.values(categoryTotals)
-      .map((cat) => ({
-        ...cat,
-        amount: Math.round(cat.amount * 100) / 100,
-      }))
-      .sort((a, b) => b.amount - a.amount);
-  };
-
-  const data = getCategoryData();
+export function CategoryBreakdownChart({ data, userBaseCurrency }: CategoryBreakdownChartProps) {
   const total = data.reduce((sum, item) => sum + item.amount, 0);
 
   const renderCustomizedLabel = (props: PieLabelRenderProps) => {

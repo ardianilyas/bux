@@ -3,21 +3,52 @@ import { createSubscriptionSchema, updateSubscriptionSchema } from "@/lib/valida
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { subscriptions, expenses } from "@/db/schema";
-import { eq, desc, and, lte, gte } from "drizzle-orm";
+import { eq, desc, and, lte, gte, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const subscriptionRouter = createTRPCRouter({
   // List user's subscriptions
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return db.query.subscriptions.findMany({
-      where: eq(subscriptions.userId, ctx.session.user.id),
-      orderBy: [desc(subscriptions.createdAt)],
-      with: {
-        category: true,
-      },
-    });
-  }),
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.subscriptions.findMany({
+        where: eq(subscriptions.userId, ctx.session.user.id),
+        orderBy: [desc(subscriptions.createdAt)],
+        limit: pageSize,
+        offset: offset,
+        with: {
+          category: true,
+        },
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, ctx.session.user.id));
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   // Create subscription
   create: protectedProcedure

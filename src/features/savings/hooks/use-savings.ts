@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/trpc/client";
 import type {
   SavingsGoal,
@@ -8,7 +9,18 @@ import type {
 } from "../types";
 
 export function useSavingsGoals() {
-  return trpc.savings.list.useQuery();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading } = trpc.savings.list.useQuery({ page, pageSize });
+
+  return {
+    savingsGoals: data?.data || [],
+    pagination: data?.pagination,
+    page,
+    setPage,
+    isLoading
+  };
 }
 
 export function useSavingsGoalById(id: string) {

@@ -27,7 +27,7 @@ export function useCategoryManagement() {
   const deleteMutation = useDeleteCategory();
 
   const role = (session?.user as any)?.role;
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "superadmin";
 
   const handleCreate = () => {
     if (!formData.name.trim()) {

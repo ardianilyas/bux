@@ -22,6 +22,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useAdminTicket, type Priority, type Status } from "../hooks/use-ticket";
 import Link from "next/link";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -65,6 +66,8 @@ export function AdminTicketsView() {
     handleUpdateStatus,
     handleUpdatePriority,
     handleAssign,
+    pagination,
+    setPage,
   } = useAdminTicket();
 
   if (isLoading) {
@@ -189,6 +192,16 @@ export function AdminTicketsView() {
           </Table>
         </CardContent>
       </Card>
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
     </div>
   );
 }

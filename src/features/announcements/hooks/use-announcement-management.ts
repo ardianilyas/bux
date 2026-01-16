@@ -14,7 +14,12 @@ export function useAnnouncementManagement() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: announcements, isLoading } = trpc.announcement.list.useQuery();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading } = trpc.announcement.list.useQuery({ page, pageSize });
+  const announcements = data?.data || [];
+  const pagination = data?.pagination;
   const utils = trpc.useUtils();
 
   const createMutation = trpc.announcement.create.useMutation({
@@ -102,6 +107,9 @@ export function useAnnouncementManagement() {
 
   return {
     announcements,
+    pagination,
+    page,
+    setPage,
     isLoading,
     isCreateOpen,
     setIsCreateOpen,

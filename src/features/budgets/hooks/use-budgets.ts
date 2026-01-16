@@ -1,11 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
 import type { Expense } from "@/features/expenses/types";
 
 export function useBudgets() {
-  return trpc.budget.list.useQuery();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading } = trpc.budget.list.useQuery({ page, pageSize });
+
+  return {
+    budgets: data?.data || [],
+    pagination: data?.pagination,
+    page,
+    setPage,
+    isLoading
+  };
 }
 
 export function useBudgetById(id: string) {

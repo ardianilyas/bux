@@ -17,8 +17,8 @@ import {
   BudgetEmptyState,
   getMonthlySpending,
 } from "@/features/budgets";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { useBudgetManagement } from "../hooks/use-budget-management";
-
 import { useSession } from "@/features/auth/hooks/use-auth";
 
 export function BudgetsView() {
@@ -27,6 +27,9 @@ export function BudgetsView() {
 
   const {
     budgets,
+    pagination,
+    page,
+    setPage,
     budgetsLoading,
     expenses,
     isCreateOpen,
@@ -134,6 +137,16 @@ export function BudgetsView() {
               userBaseCurrency={userBaseCurrency}
             />
           ))}
+        </div>
+      )}
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

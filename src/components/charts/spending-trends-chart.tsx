@@ -14,52 +14,14 @@ import { formatCurrency } from "@/lib/utils";
 import { convertToBaseCurrency } from "@/lib/currency-conversion";
 
 interface SpendingTrendsChartProps {
-  expenses: {
-    id: string;
+  data: {
+    month: string;
     amount: number;
-    currency: string;
-    exchangeRate: number;
-    date: Date | string;
   }[];
   userBaseCurrency: string;
 }
 
-export function SpendingTrendsChart({ expenses, userBaseCurrency }: SpendingTrendsChartProps) {
-  // Group expenses by month for the last 6 months
-  const getMonthlyData = () => {
-    const monthlyData: { [key: string]: number } = {};
-    const now = new Date();
-
-    // Initialize last 6 months with 0
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = date.toLocaleDateString("en-US", {
-        month: "short",
-        year: "2-digit",
-      });
-      monthlyData[monthKey] = 0;
-    }
-
-    // Sum expenses by month (converted to base currency)
-    expenses.forEach((expense) => {
-      const expenseDate = new Date(expense.date);
-      const monthKey = expenseDate.toLocaleDateString("en-US", {
-        month: "short",
-        year: "2-digit",
-      });
-      if (monthKey in monthlyData) {
-        const convertedAmount = convertToBaseCurrency(expense, userBaseCurrency);
-        monthlyData[monthKey] += convertedAmount;
-      }
-    });
-
-    return Object.entries(monthlyData).map(([month, amount]) => ({
-      month,
-      amount: Math.round(amount * 100) / 100,
-    }));
-  };
-
-  const data = getMonthlyData();
+export function SpendingTrendsChart({ data, userBaseCurrency }: SpendingTrendsChartProps) {
 
   return (
     <Card>

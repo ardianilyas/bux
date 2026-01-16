@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { auth } from "@/features/auth/config/auth";
 import { headers } from "next/headers";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
@@ -14,16 +14,74 @@ const isAdmin = (role: string) => role === USER_ROLE.ADMIN || role === USER_ROLE
 const isSuperadmin = (role: string) => role === USER_ROLE.SUPERADMIN;
 
 export const userRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    // Only admins and superadmins can list users
+  getStats: protectedProcedure.query(async ({ ctx }) => {
+    // Only admins/superadmins can see stats (or maybe all? let's stick to admin for now as it was used in admin table context?)
+    // Actually UserStatsCards is imported in... where?
+    // It's likely an admin component. The file is in `features/users/components`.
     if (!isAdmin(ctx.session.user.role)) {
       throw new Error("Unauthorized");
     }
 
-    return db.query.users.findMany({
-      orderBy: (users, { desc }) => [desc(users.createdAt)],
-    });
+    const [total] = await db.select({ count: sql<number>`count(*)::int` }).from(users);
+    const [active] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(eq(users.status, "active"));
+    const [suspended] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(eq(users.status, "suspended"));
+    const [banned] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(eq(users.status, "banned"));
+
+    return {
+      total: total?.count ?? 0,
+      active: active?.count ?? 0,
+      suspended: suspended?.count ?? 0,
+      banned: banned?.count ?? 0,
+    };
   }),
+
+  list: protectedProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Only admins and superadmins can list users
+      if (!isAdmin(ctx.session.user.role)) {
+        throw new Error("Unauthorized");
+      }
+
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.users.findMany({
+        orderBy: (users, { desc }) => [desc(users.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(users);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   updateStatus: protectedProcedure
     .input(

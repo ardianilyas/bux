@@ -2,18 +2,48 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { announcements } from "@/db/schema";
-import { eq, desc, and, lte, or, isNull, gte } from "drizzle-orm";
+import { eq, desc, and, lte, or, isNull, gte, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { ANNOUNCEMENT_TYPES } from "@/lib/constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const announcementRouter = createTRPCRouter({
   // Admin: List all announcements
-  list: adminProcedure.query(async () => {
-    return db.query.announcements.findMany({
-      orderBy: [desc(announcements.createdAt)],
-    });
-  }),
+  list: adminProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.announcements.findMany({
+        orderBy: [desc(announcements.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(announcements);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   // Admin: Create announcement
   create: adminProcedure
@@ -113,15 +143,48 @@ export const announcementRouter = createTRPCRouter({
     }),
 
   // User: Get active announcements
-  getActive: protectedProcedure.query(async () => {
-    const now = new Date();
-    return db.query.announcements.findMany({
-      where: and(
+  getActive: protectedProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ input }) => {
+      const now = new Date();
+      const whereClause = and(
         eq(announcements.isActive, true),
         lte(announcements.startsAt, now),
         or(isNull(announcements.expiresAt), gte(announcements.expiresAt, now))
-      ),
-      orderBy: [desc(announcements.createdAt)],
-    });
-  }),
+      );
+
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.announcements.findMany({
+        where: whereClause,
+        orderBy: [desc(announcements.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(announcements)
+        .where(whereClause);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 });

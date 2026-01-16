@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { SavingsGoalCard, SavingsGoalEmptyState } from "./savings-goal-card";
 import { SavingsGoalForm } from "./savings-goal-form";
 import { AddFundsDialog } from "./add-funds-dialog";
@@ -30,7 +31,7 @@ export function SavingsView() {
   const { data: session } = useSession();
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
 
-  const { data: savingsGoals, isLoading } = useSavingsGoals();
+  const { savingsGoals, pagination, page, setPage, isLoading } = useSavingsGoals();
   const createMutation = useCreateSavingsGoal();
   const updateMutation = useUpdateSavingsGoal();
   const deleteMutation = useDeleteSavingsGoal();
@@ -200,6 +201,16 @@ export function SavingsView() {
               userBaseCurrency={userBaseCurrency}
             />
           ))}
+        </div>
+      )}
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

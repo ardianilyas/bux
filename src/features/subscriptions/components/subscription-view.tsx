@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
 import { Pencil, Trash2, PlayCircle } from "lucide-react";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { useSubscription, type BillingCycleType } from "../hooks/use-subscription";
 
 const getCycleLabel = (cycle: string) => {
@@ -66,6 +67,9 @@ const getDueStatus = (nextBillingDate: Date) => {
 export function SubscriptionView() {
   const {
     subscriptions,
+    pagination,
+    page,
+    setPage,
     categories,
     isLoading,
     totalMonthly,
@@ -300,6 +304,16 @@ export function SubscriptionView() {
         </div>
       )}
 
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
@@ -400,4 +414,3 @@ export function SubscriptionView() {
     </div>
   );
 }
-  

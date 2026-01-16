@@ -22,11 +22,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { AnnouncementForm } from "./announcement-form";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { useAnnouncementManagement } from "../hooks/use-announcement-management";
 
 export function AnnouncementsView() {
   const {
     announcements,
+    pagination,
+    page,
+    setPage,
     isLoading,
     isCreateOpen,
     setIsCreateOpen,
@@ -152,6 +156,16 @@ export function AnnouncementsView() {
           )}
         </CardContent>
       </Card>
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
 
       <Dialog open={!!editingAnnouncement} onOpenChange={(open) => !open && setEditingAnnouncement(null)}>
         <DialogContent>

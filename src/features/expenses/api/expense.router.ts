@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
-import { expenses } from "@/db/schema";
-import { eq, desc, and, ilike, gte, lte } from "drizzle-orm";
+import { expenses, categories } from "@/db/schema";
+import { eq, desc, and, ilike, gte, lte, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
@@ -11,43 +11,151 @@ export const expenseRouter = createTRPCRouter({
     .input(
       z
         .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
           search: z.string().optional(),
           categoryId: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
         })
-        .optional()
     )
     .query(async ({ ctx, input }) => {
       const filters = [eq(expenses.userId, ctx.session.user.id)];
 
-      if (input?.search) {
+      if (input.search) {
         filters.push(ilike(expenses.description, `%${input.search}%`));
       }
 
-      if (input?.categoryId && input.categoryId !== "all") {
+      if (input.categoryId && input.categoryId !== "all") {
         filters.push(eq(expenses.categoryId, input.categoryId));
       }
 
-      if (input?.startDate) {
+      if (input.startDate) {
         filters.push(gte(expenses.date, new Date(input.startDate)));
       }
 
-      if (input?.endDate) {
+      if (input.endDate) {
         // Set end date to end of day
         const end = new Date(input.endDate);
         end.setHours(23, 59, 59, 999);
         filters.push(lte(expenses.date, end));
       }
 
-      return db.query.expenses.findMany({
-        where: and(...filters),
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+      const whereClause = and(...filters);
+
+      const data = await db.query.expenses.findMany({
+        where: whereClause,
         orderBy: [desc(expenses.date)],
+        limit: pageSize,
+        offset: offset,
         with: {
           category: true,
         },
       });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(expenses)
+        .where(whereClause);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
     }),
+
+  getStats: protectedProcedure.query(async ({ ctx }) => {
+    const filters = [eq(expenses.userId, ctx.session.user.id)];
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [totalResult] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(expenses)
+      .where(and(...filters));
+
+    const [thisMonthResult] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
+      })
+      .from(expenses)
+      .where(and(...filters, gte(expenses.date, startOfMonth)));
+
+    return {
+      total: totalResult?.total ?? 0,
+      count: totalResult?.count ?? 0,
+      thisMonth: thisMonthResult?.total ?? 0,
+    };
+  }),
+
+  getTrends: protectedProcedure.query(async ({ ctx }) => {
+    // Get last 6 months
+    const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+    const data = await db
+      .select({
+        month: sql<string>`to_char(${expenses.date}, 'MMM YY')`,
+        sortKey: sql<string>`to_char(${expenses.date}, 'YYYY-MM')`,
+        amount: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
+      })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, ctx.session.user.id),
+          gte(expenses.date, sixMonthsAgo)
+        )
+      )
+      .groupBy(sql`to_char(${expenses.date}, 'MMM YY'), to_char(${expenses.date}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${expenses.date}, 'YYYY-MM') ASC`);
+
+    return data.map((d) => ({
+      month: d.month,
+      amount: d.amount,
+    }));
+  }),
+
+  getBreakdown: protectedProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const data = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        color: categories.color,
+        amount: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
+      })
+      .from(expenses)
+      .leftJoin(categories, eq(expenses.categoryId, categories.id))
+      .where(
+        and(
+          eq(expenses.userId, ctx.session.user.id),
+          gte(expenses.date, startOfMonth)
+        )
+      )
+      .groupBy(categories.id, categories.name, categories.color)
+      .orderBy(desc(sql`sum(${expenses.amount} * ${expenses.exchangeRate})`));
+
+    return data.map((d) => ({
+      id: d.id,
+      name: d.name || "Uncategorized",
+      color: d.color || "#6b7280",
+      amount: d.amount,
+    }));
+  }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { formatDistanceToNow } from "date-fns";
 import { Plus, MessageCircle, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useTicket, type Priority, type Category } from "../hooks/use-ticket";
@@ -70,6 +71,9 @@ const formatStatus = (status: string) => {
 export function SupportView() {
   const {
     tickets,
+    pagination,
+    page,
+    setPage,
     isLoading,
     isCreateOpen,
     setIsCreateOpen,
@@ -262,6 +266,16 @@ export function SupportView() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {pagination && (
+        <div className="flex justify-end mt-4">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

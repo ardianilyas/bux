@@ -2,17 +2,48 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { savingsGoals } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const savingsRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return db.query.savingsGoals.findMany({
-      where: eq(savingsGoals.userId, ctx.session.user.id),
-      orderBy: (savingsGoals, { desc }) => [desc(savingsGoals.createdAt)],
-    });
-  }),
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.savingsGoals.findMany({
+        where: eq(savingsGoals.userId, ctx.session.user.id),
+        orderBy: (savingsGoals, { desc }) => [desc(savingsGoals.createdAt)],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(savingsGoals)
+        .where(eq(savingsGoals.userId, ctx.session.user.id));
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   getById: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

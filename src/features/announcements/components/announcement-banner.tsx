@@ -9,7 +9,7 @@ type AnnouncementType = "info" | "success" | "warning" | "critical";
 
 export function AnnouncementBanner() {
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
-  const { data: announcements } = trpc.announcement.getActive.useQuery();
+  const { data: announcements } = trpc.announcement.getActive.useQuery({});
 
   useEffect(() => {
     const stored = localStorage.getItem(DISMISSED_KEY);
@@ -24,7 +24,7 @@ export function AnnouncementBanner() {
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(updated));
   };
 
-  const visibleAnnouncements = announcements?.filter(
+  const visibleAnnouncements = announcements?.data.filter(
     (a) => !dismissedIds.includes(a.id)
   );
 

@@ -20,9 +20,17 @@ export function useBudgetManagement() {
     amount: "",
   });
 
-  const { data: budgets, isLoading: budgetsLoading } = useBudgets();
+  const { budgets, pagination, page, setPage, isLoading: budgetsLoading } = useBudgets();
   const { data: categories } = useCategories();
-  const { data: expenses } = useExpenses();
+  // Fetch more expenses for budget calculation client-side
+  const { data: expensesData } = useExpenses({
+    search: "",
+    categoryId: "all",
+    startDate: "",
+    endDate: "",
+    pageSize: 1000,
+  });
+  const expenses = expensesData?.data || [];
 
   const createMutation = useCreateBudget();
   const updateMutation = useUpdateBudget();
@@ -105,6 +113,9 @@ export function useBudgetManagement() {
 
   return {
     budgets,
+    pagination,
+    page,
+    setPage,
     budgetsLoading,
     categories,
     expenses,

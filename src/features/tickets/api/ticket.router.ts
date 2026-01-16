@@ -2,21 +2,52 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { tickets, ticketMessages, users } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const ticketRouter = createTRPCRouter({
   // User: List my tickets
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return db.query.tickets.findMany({
-      where: eq(tickets.userId, ctx.session.user.id),
-      orderBy: [desc(tickets.createdAt)],
-      with: {
-        assignedTo: true,
-      },
-    });
-  }),
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.tickets.findMany({
+        where: eq(tickets.userId, ctx.session.user.id),
+        orderBy: [desc(tickets.createdAt)],
+        limit: pageSize,
+        offset: offset,
+        with: {
+          assignedTo: true,
+        },
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(tickets)
+        .where(eq(tickets.userId, ctx.session.user.id));
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   // User: Get single ticket with messages
   get: protectedProcedure
@@ -192,15 +223,45 @@ export const ticketRouter = createTRPCRouter({
     }),
 
   // Admin: List all tickets
-  adminList: adminProcedure.query(async () => {
-    return db.query.tickets.findMany({
-      orderBy: [desc(tickets.createdAt)],
-      with: {
-        user: true,
-        assignedTo: true,
-      },
-    });
-  }),
+  adminList: adminProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(10),
+        })
+
+    )
+    .query(async ({ input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.tickets.findMany({
+        orderBy: [desc(tickets.createdAt)],
+        limit: pageSize,
+        offset: offset,
+        with: {
+          user: true,
+          assignedTo: true,
+        },
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(tickets);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
 
   // Admin: Get single ticket with messages (including internal)
   adminGet: adminProcedure

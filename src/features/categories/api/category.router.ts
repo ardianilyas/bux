@@ -2,12 +2,48 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const categoryRouter = createTRPCRouter({
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          page: z.number().min(1).default(1),
+          pageSize: z.number().min(1).max(100).default(50),
+        })
+
+    )
+    .query(async ({ input }) => {
+      const { page, pageSize } = input;
+      const offset = (page - 1) * pageSize;
+
+      const data = await db.query.categories.findMany({
+        orderBy: [categories.name],
+        limit: pageSize,
+        offset: offset,
+      });
+
+      const [totalResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(categories);
+
+      const total = totalResult?.count ?? 0;
+
+      return {
+        data,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
+
+  getAll: protectedProcedure.query(async () => {
     return db.query.categories.findMany({
       orderBy: [categories.name],
     });

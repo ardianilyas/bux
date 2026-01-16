@@ -35,7 +35,12 @@ export function useExpenseManagement() {
     endDate: "",
   });
 
-  const { data: expenses, isLoading: expensesLoading } = useExpenses(filters);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data: expensesData, isLoading: expensesLoading } = useExpenses({ ...filters, page, pageSize });
+  const expenses = expensesData?.data || [];
+  const pagination = expensesData?.pagination;
   const { data: categories } = useCategories();
 
   const createMutation = useCreateExpense();
@@ -161,6 +166,9 @@ export function useExpenseManagement() {
 
   return {
     expenses,
+    pagination,
+    page,
+    setPage,
     expensesLoading,
     categories,
     filters,

@@ -4,7 +4,7 @@ import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
 
 export function useCategories() {
-  return trpc.category.list.useQuery();
+  return trpc.category.getAll.useQuery();
 }
 
 export function useCategoryById(id: string) {

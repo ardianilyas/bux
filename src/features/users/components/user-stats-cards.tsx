@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function UserStatsCards() {
-  const { data: users, isLoading } = trpc.user.list.useQuery();
+  const { data: stats, isLoading } = trpc.user.getStats.useQuery();
 
   if (isLoading) {
     return (
@@ -24,10 +24,10 @@ export function UserStatsCards() {
     );
   }
 
-  const totalUsers = users?.length || 0;
-  const activeUsers = users?.filter((u) => u.status === "active").length || 0;
-  const suspendedUsers = users?.filter((u) => u.status === "suspended").length || 0;
-  const bannedUsers = users?.filter((u) => u.status === "banned").length || 0;
+  const totalUsers = stats?.total || 0;
+  const activeUsers = stats?.active || 0;
+  const suspendedUsers = stats?.suspended || 0;
+  const bannedUsers = stats?.banned || 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-4">

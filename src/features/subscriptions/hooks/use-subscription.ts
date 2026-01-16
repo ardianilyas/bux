@@ -31,8 +31,13 @@ export function useSubscription() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Queries
-  const { data: subscriptions, isLoading } = trpc.subscription.list.useQuery();
-  const { data: categories } = trpc.category.list.useQuery();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data: subscriptionData, isLoading } = trpc.subscription.list.useQuery({ page, pageSize });
+  const subscriptions = subscriptionData?.data || [];
+  const pagination = subscriptionData?.pagination;
+  const { data: categories } = trpc.category.getAll.useQuery();
   const utils = trpc.useUtils();
 
   // Mutations
@@ -196,6 +201,9 @@ export function useSubscription() {
   return {
     // Data
     subscriptions,
+    pagination,
+    page,
+    setPage,
     categories,
     isLoading,
     totalMonthly,

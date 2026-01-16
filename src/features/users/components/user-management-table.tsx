@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useSession } from "@/features/auth/hooks/use-auth";
 import { USER_ROLE } from "@/lib/constants";
 import { StatusChangeDialog } from "./status-change-dialog";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 type User = {
   id: string;
@@ -48,7 +49,12 @@ export function UserManagementTable() {
   const currentUserRole = (session?.user as any)?.role || "user";
   const isSuperadmin = currentUserRole === USER_ROLE.SUPERADMIN;
 
-  const { data: users, isLoading } = trpc.user.list.useQuery();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading } = trpc.user.list.useQuery({ page, pageSize });
+  const users = data?.data || [];
+  const pagination = data?.pagination;
   const utils = trpc.useUtils();
 
   // Dialog state for ban/suspend
@@ -273,6 +279,16 @@ export function UserManagementTable() {
           </Table>
         </CardContent>
       </Card>
+
+      {pagination && (
+        <div className="mt-4 flex justify-end">
+          <PaginationControl
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
 
       <StatusChangeDialog
         open={dialogOpen}

@@ -38,8 +38,14 @@ export function useTicket() {
   // Message State
   const [newMessage, setNewMessage] = useState("");
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
   // Queries
-  const { data: tickets, isLoading } = trpc.ticket.list.useQuery();
+  const { data, isLoading } = trpc.ticket.list.useQuery({ page, pageSize });
+  const tickets = data?.data || [];
+  const pagination = data?.pagination;
   const utils = trpc.useUtils();
 
   // Mutations
@@ -155,6 +161,11 @@ export function useTicket() {
   return {
     // Data
     tickets,
+    // Data
+
+    pagination,
+    page,
+    setPage,
     isLoading,
 
     // Create Form
@@ -203,10 +214,18 @@ export function useAdminTicket() {
   const [newMessage, setNewMessage] = useState("");
   const [isInternal, setIsInternal] = useState(false);
 
-  const { data: tickets, isLoading } = trpc.ticket.adminList.useQuery(undefined, {
-    staleTime: 0, // Data is always considered stale
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading } = trpc.ticket.adminList.useQuery(
+    { page, pageSize },
+    {
+      staleTime: 0, // Data is always considered stale
+      refetchInterval: 30000, // Refetch every 30 seconds
+    }
+  );
+  const tickets = data?.data || [];
+  const pagination = data?.pagination;
   const { data: admins } = trpc.ticket.getAdmins.useQuery();
   const utils = trpc.useUtils();
 
@@ -254,6 +273,9 @@ export function useAdminTicket() {
 
   return {
     tickets,
+    pagination,
+    page,
+    setPage,
     admins,
     isLoading,
     handleUpdateStatus,
