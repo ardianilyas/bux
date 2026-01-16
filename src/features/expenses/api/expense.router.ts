@@ -202,6 +202,7 @@ export const expenseRouter = createTRPCRouter({
           description: input.description,
           date: input.date,
           categoryId: input.categoryId,
+          merchant: input.merchant,
           userId: ctx.session.user.id,
         })
         .returning();

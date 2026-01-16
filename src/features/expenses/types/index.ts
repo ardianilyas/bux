@@ -6,6 +6,7 @@ export type Expense = {
   currency: string;
   exchangeRate: number;
   description: string;
+  merchant: string | null;
   date: Date;
   categoryId: string | null;
   userId: string;
@@ -43,6 +44,7 @@ export type CreateExpenseInput = {
   categoryId?: string;
   currency: string;
   exchangeRate: number;
+  merchant?: string;
 };
 
 export type UpdateExpenseInput = {
@@ -53,4 +55,5 @@ export type UpdateExpenseInput = {
   categoryId?: string | null;
   currency?: string;
   exchangeRate?: number;
+  merchant?: string;
 };

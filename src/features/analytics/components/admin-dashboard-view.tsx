@@ -8,6 +8,10 @@ import {
   useUserGrowth,
   useExpenseTrends,
   useRecentActivity,
+  useUserEngagement,
+  useUserRetention,
+  usePlatformActivity,
+  useSupportMetrics,
 } from "../hooks/use-analytics";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -27,6 +31,10 @@ export function AdminDashboardView() {
   const { data: userGrowth, isLoading: growthLoading } = useUserGrowth();
   const { data: expenseTrends, isLoading: trendsLoading } = useExpenseTrends();
   const { data: activity, isLoading: activityLoading } = useRecentActivity();
+  const { data: engagement, isLoading: engagementLoading } = useUserEngagement();
+  const { data: retention, isLoading: retentionLoading } = useUserRetention();
+  const { data: platformActivity, isLoading: platformLoading } = usePlatformActivity();
+  const { data: supportMetrics, isLoading: supportLoading } = useSupportMetrics();
 
   return (
     <div className="space-y-6">
@@ -211,6 +219,252 @@ export function AdminDashboardView() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* User Engagement & Retention */}
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard
+            title="DAU"
+            value={engagement?.dau}
+            loading={engagementLoading}
+            subtitle="Daily Active Users"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="WAU"
+            value={engagement?.wau}
+            loading={engagementLoading}
+            subtitle="Weekly Active Users"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="7-Day Retention"
+            value={retention ? `${Math.round(retention.sevenDayRetention)}%` : undefined}
+            loading={retentionLoading}
+            subtitle="User return rate"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="30-Day Retention"
+            value={retention ? `${Math.round(retention.thirtyDayRetention)}%` : undefined}
+            loading={retentionLoading}
+            subtitle="Long-term engagement"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+              </svg>
+            }
+          />
+        </div>
+
+        {/* Platform Activity Stats */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Receipt Scanning</CardTitle>
+              <p className="text-sm text-muted-foreground">AI-powered expense extraction</p>
+            </CardHeader>
+            <CardContent>
+              {platformLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Scanned</span>
+                    <span className="text-lg font-bold text-foreground">
+                      {platformActivity?.receiptScanning.scanned ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Manual</span>
+                    <span className="text-lg font-bold text-foreground">
+                      {((platformActivity?.receiptScanning.total ?? 0) -
+                        (platformActivity?.receiptScanning.scanned ?? 0))}
+                    </span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Scan Rate</span>
+                      <span className="text-sm font-semibold text-primary">
+                        {Math.round(platformActivity?.receiptScanning.percentage ?? 0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Top Currencies</CardTitle>
+              <p className="text-sm text-muted-foreground">Multi-currency usage</p>
+            </CardHeader>
+            <CardContent>
+              {platformLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : (
+                <div className="space-y-3">
+                  {platformActivity?.currencies.slice(0, 3).map((curr) => (
+                    <div key={curr.currency} className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-mono">
+                          {curr.currency}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{curr.count} txns</span>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">
+                        {formatCurrency(curr.total, curr.currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Savings Goals</CardTitle>
+              <p className="text-sm text-muted-foreground">User goal tracking</p>
+            </CardHeader>
+            <CardContent>
+              {platformLoading ? (
+                <Skeleton className="h-16 w-full" />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Goals</span>
+                    <span className="text-2xl font-bold text-foreground">
+                      {platformActivity?.savingsProgress.totalGoals ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-muted-foreground">Avg Progress</span>
+                      <span className="text-sm font-semibold text-primary">
+                        {Math.round(platformActivity?.savingsProgress.averageCompletion ?? 0)}%
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                        style={{ width: `${Math.min(platformActivity?.savingsProgress.averageCompletion ?? 0, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Spending Categories */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">Top Spending Categories</CardTitle>
+            <p className="text-sm text-muted-foreground">Where users spend the most</p>
+          </CardHeader>
+          <CardContent>
+            {platformLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <div className="space-y-4">
+                {platformActivity?.topCategories.map((cat, idx) => (
+                  <div key={cat.name} className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-sm font-medium text-muted-foreground w-4">
+                        #{idx + 1}
+                      </span>
+                      <div
+                        className="h-8 w-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: cat.color }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+                          <circle cx="7.5" cy="7.5" r=".5" fill="white" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{cat.name}</p>
+                        <p className="text-xs text-muted-foreground">{cat.count} expenses</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {formatCurrency(cat.total)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Support Performance */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <StatCard
+            title="Avg Response Time"
+            value={supportMetrics ? `${Math.round(supportMetrics.avgResponseTime)}h` : undefined}
+            loading={supportLoading}
+            subtitle="First admin reply"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="Avg Resolution Time"
+            value={supportMetrics ? `${Math.round(supportMetrics.avgResolutionTime)}h` : undefined}
+            loading={supportLoading}
+            subtitle="Ticket close time"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            }
+          />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Tickets by Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {supportLoading ? (
+                <Skeleton className="h-12 w-full" />
+              ) : (
+                <div className="space-y-2">
+                  {supportMetrics?.ticketsByStatus.map((status) => (
+                    <div key={status.status} className="flex justify-between items-center">
+                      <Badge variant={status.status === "open" ? "default" : "secondary"} className="capitalize">
+                        {status.status}
+                      </Badge>
+                      <span className="text-sm font-medium text-foreground">{status.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Recent Activity */}

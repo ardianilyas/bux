@@ -76,6 +76,7 @@ export function ReceiptUpload() {
       categoryId: category?.id,
       currency: receiptCurrency,
       exchangeRate: exchangeRate,
+      merchant: parsedReceipt.merchant || undefined, // Only set if not null
     });
 
     setOpen(false);

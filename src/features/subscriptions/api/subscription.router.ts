@@ -81,7 +81,7 @@ export const subscriptionRouter = createTRPCRouter({
         const { ipAddress, userAgent } = await getRequestMetadata();
         await logAudit({
           userId: ctx.session.user.id,
-          action: AUDIT_ACTIONS.BUDGET.CREATE,
+          action: AUDIT_ACTIONS.SUBSCRIPTION.CREATE,
           targetId: subscription.id,
           targetType: "subscription",
           metadata: { name: input.name, amount: input.amount },
@@ -113,7 +113,7 @@ export const subscriptionRouter = createTRPCRouter({
       const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
         userId: ctx.session.user.id,
-        action: AUDIT_ACTIONS.BUDGET.UPDATE,
+        action: AUDIT_ACTIONS.SUBSCRIPTION.UPDATE,
         targetId: input.id,
         targetType: "subscription",
         metadata: data,
@@ -141,7 +141,7 @@ export const subscriptionRouter = createTRPCRouter({
       const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
         userId: ctx.session.user.id,
-        action: AUDIT_ACTIONS.BUDGET.DELETE,
+        action: AUDIT_ACTIONS.SUBSCRIPTION.DELETE,
         targetId: input.id,
         targetType: "subscription",
         ipAddress,

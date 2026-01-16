@@ -22,6 +22,7 @@ export const createExpenseSchema = z.object({
   categoryId: z.string().uuid().optional(),
   currency: z.string(),
   exchangeRate: z.number().positive(),
+  merchant: z.string().optional(),
 });
 
 // Schema for updating an existing expense
@@ -33,6 +34,7 @@ export const updateExpenseSchema = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   currency: z.string().optional(),
   exchangeRate: z.number().positive().optional(),
+  merchant: z.string().optional(),
 });
 
 // Schema for getting expense by ID

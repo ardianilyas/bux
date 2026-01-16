@@ -5,6 +5,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count } from "drizzle-orm";
 import { USER_ROLE } from "@/lib/constants";
+import { logAudit, AUDIT_ACTIONS } from "@/lib/audit-logger";
+import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -30,6 +32,37 @@ export const auth = betterAuth({
               role: isFirstUser ? USER_ROLE.SUPERADMIN : USER_ROLE.USER,
             },
           };
+        },
+        after: async (user) => {
+          const { ipAddress, userAgent } = await getRequestMetadata();
+          await logAudit({
+            userId: user.id,
+            action: AUDIT_ACTIONS.USER.REGISTER,
+            targetId: user.id,
+            targetType: "user",
+            metadata: {
+              email: user.email,
+              name: user.name,
+              role: user.role,
+            },
+            ipAddress,
+            userAgent,
+          });
+        },
+      },
+    },
+    session: {
+      create: {
+        after: async (session) => {
+          const { ipAddress, userAgent } = await getRequestMetadata();
+          await logAudit({
+            userId: session.userId,
+            action: AUDIT_ACTIONS.USER.LOGIN,
+            targetId: session.id,
+            targetType: "session",
+            ipAddress,
+            userAgent,
+          });
         },
       },
     },

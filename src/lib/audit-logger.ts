@@ -4,6 +4,7 @@ import { auditLogs } from "@/db/schema";
 export type AuditAction =
   | "user.login"
   | "user.logout"
+  | "user.register"
   | "user.ban"
   | "user.suspend"
   | "user.activate"
@@ -23,6 +24,9 @@ export type AuditAction =
   | "ticket.create"
   | "ticket.update"
   | "ticket.close"
+  | "subscription.create"
+  | "subscription.update"
+  | "subscription.delete"
   | "subscription.process"
   | "savings_goal.create"
   | "savings_goal.update"
@@ -34,6 +38,7 @@ export const AUDIT_ACTIONS = {
   USER: {
     LOGIN: "user.login" as const,
     LOGOUT: "user.logout" as const,
+    REGISTER: "user.register" as const,
     BAN: "user.ban" as const,
     SUSPEND: "user.suspend" as const,
     ACTIVATE: "user.activate" as const,
@@ -65,6 +70,9 @@ export const AUDIT_ACTIONS = {
     CLOSE: "ticket.close" as const,
   },
   SUBSCRIPTION: {
+    CREATE: "subscription.create" as const,
+    UPDATE: "subscription.update" as const,
+    DELETE: "subscription.delete" as const,
     PROCESS: "subscription.process" as const,
   },
   SAVINGS_GOAL: {
@@ -104,7 +112,7 @@ export async function logAudit({
       metadata: metadata ? JSON.stringify(metadata) : null,
       ipAddress,
       userAgent,
-      createdAt: new Date(),
+      // Let database handle timestamp with its defaultNow() - it's timezone-aware
     });
   } catch (error) {
     // Log error but don't throw - audit logging should not break application flow
