@@ -15,14 +15,7 @@ import { getRequestMetadata } from "@/lib/request-metadata";
 export const subscriptionRouter = createTRPCRouter({
   // List user's subscriptions
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(subscriptionListInputSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -133,7 +126,7 @@ export const subscriptionRouter = createTRPCRouter({
 
   // Delete subscription
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteSubscriptionSchema)
     .mutation(async ({ ctx, input }) => {
       await db
         .delete(subscriptions)

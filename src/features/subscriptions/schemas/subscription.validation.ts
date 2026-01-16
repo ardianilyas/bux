@@ -15,10 +15,11 @@ export const createSubscriptionSchema = z.object({
   name: z.string().min(1, "Name is required"),
   amount: z.number().positive("Amount must be positive"),
   currency: z.string().default("IDR"),
-  billingCycle: z.enum(["monthly", "yearly"]),
-  startDate: z.date(),
+  billingCycle: z.enum(["weekly", "monthly", "yearly"]),
+  nextBillingDate: z.date(),
   categoryId: z.string().uuid().optional(),
   isActive: z.boolean().optional().default(true),
+  createExpense: z.boolean().optional().default(false),
 });
 
 // Schema for updating an existing subscription
@@ -27,8 +28,8 @@ export const updateSubscriptionSchema = z.object({
   name: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
   currency: z.string().optional(),
-  billingCycle: z.enum(["monthly", "yearly"]).optional(),
-  startDate: z.date().optional(),
+  billingCycle: z.enum(["weekly", "monthly", "yearly"]).optional(),
+  nextBillingDate: z.date().optional(),
   categoryId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().optional(),
 });

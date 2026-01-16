@@ -7,7 +7,9 @@
 - [x] **Error Handling**: Implement global error boundaries and better toast notifications for server errors.
 - [x] **Admin Feature**: Implement ban and suspend reason and duration for users
 - [ ] **Refactor UI Code**: Refactor all ui code to be more cleaner and readable, separate each component that have same style and functionality to be more cleaner code
-- [ ] **Refactor Schema and Validation**: Refactor all schema move to features folder for each schema and zod validation
+- [x] **Refactor Schema and Validation** (Partially Complete): Refactor all schema move to features folder for each schema and zod validation
+  - ✅ Completed: Expenses, Budgets, Savings, Categories, Subscriptions
+  - ⏸️ Paused: Users, Announcements, Audit, Tickets (schemas created, router updates pending)
 
 ## 🚀 New Features
 - [ ] **Email Notifications**:
@@ -27,3 +29,11 @@
 - [ ] **Testing**: Set up Jest/Vitest for unit tests and Playwright for E2E testing.
 - [ ] **CI/CD**: Configure GitHub Actions for automated linting and type checking.
 - [ ] **Rate Limiting**: Implement rate limiting on API routes to prevent abuse.
+
+## 🔄 Paused Tasks (Continue Later)
+- [ ] **Complete Schema Refactoring**: Finish replacing inline Zod schemas with imports in remaining routers:
+  - `src/features/users/api/user.router.ts`
+  - `src/features/announcements/api/announcement.router.ts`
+  - `src/features/audit/api/audit.router.ts`
+  - `src/features/tickets/api/ticket.router.ts`
+  - Note: Schema files already created in `schemas/` directories, just need to update router imports
