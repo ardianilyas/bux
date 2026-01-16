@@ -136,7 +136,9 @@ export function AdminDashboardView() {
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
                       }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                       labelFormatter={(value) => new Date(value).toLocaleDateString()}
                       formatter={(value: number | undefined) => [value ?? 0, "Signups"]}
                     />
@@ -189,7 +191,9 @@ export function AdminDashboardView() {
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
                       }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                       labelFormatter={(value) => new Date(value).toLocaleDateString()}
                       formatter={(value: number | undefined) => [formatCurrency(value ?? 0), "Volume"]}
                     />
