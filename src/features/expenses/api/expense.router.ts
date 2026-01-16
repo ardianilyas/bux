@@ -103,7 +103,7 @@ export const expenseRouter = createTRPCRouter({
 
     const data = await db
       .select({
-        month: sql<string>`to_char(${expenses.date}, 'MMM YY')`,
+        month: sql<string>`to_char(${expenses.date}, 'Mon YY')`,
         sortKey: sql<string>`to_char(${expenses.date}, 'YYYY-MM')`,
         amount: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
       })
@@ -114,13 +114,36 @@ export const expenseRouter = createTRPCRouter({
           gte(expenses.date, sixMonthsAgo)
         )
       )
-      .groupBy(sql`to_char(${expenses.date}, 'MMM YY'), to_char(${expenses.date}, 'YYYY-MM')`)
+      .groupBy(sql`to_char(${expenses.date}, 'Mon YY'), to_char(${expenses.date}, 'YYYY-MM')`)
       .orderBy(sql`to_char(${expenses.date}, 'YYYY-MM') ASC`);
 
-    return data.map((d) => ({
-      month: d.month,
-      amount: d.amount,
-    }));
+    // Fill in missing months
+    const filledData = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const monthStr = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      // Match format 'MMM YY' e.g. "Jan 24"
+      // to_char 'MMM YY' returns "Jan 24". JS 'short' '2-digit' usually "Jan 24".
+      // Let's ensure strict matching by comparing sortKey if possible, or just standardizing js side.
+      // Actually, let's just use the JS generated month string for display and match by index or date.
+      // Better: Generate the expected 'MMM YY' strings in JS and find in data.
+
+      // Postgres 'MMM YY' might be 'Jan 24'. 
+      // JS: d.toLocaleDateString("en-US", { month: "short", year: "2-digit" }) -> "Jan 24"
+      // Let's verify sortKey 'YYYY-MM' matching.
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const sortKey = `${year}-${month}`;
+
+      const found = data.find(item => item.sortKey === sortKey);
+
+      filledData.push({
+        month: found ? found.month : monthStr,
+        amount: found ? found.amount : 0
+      });
+    }
+
+    return filledData;
   }),
 
   getBreakdown: protectedProcedure.query(async ({ ctx }) => {

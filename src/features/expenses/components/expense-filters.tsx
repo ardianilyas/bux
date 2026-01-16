@@ -10,6 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import type { ExpenseFilters } from "../types";
 
 type Category = {
@@ -64,24 +67,21 @@ export function ExpenseFiltersCard({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Start Date</Label>
-            <Input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) =>
-                onFiltersChange({ ...filters, startDate: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>End Date</Label>
-            <Input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) =>
-                onFiltersChange({ ...filters, endDate: e.target.value })
-              }
+          <div className="md:col-span-2 space-y-2">
+            <Label>Date Range</Label>
+            <DatePickerWithRange
+              className="w-full"
+              date={{
+                from: filters.startDate ? new Date(filters.startDate) : undefined,
+                to: filters.endDate ? new Date(filters.endDate) : undefined,
+              }}
+              setDate={(range: DateRange | undefined) => {
+                onFiltersChange({
+                  ...filters,
+                  startDate: range?.from ? format(range.from, "yyyy-MM-dd") : "",
+                  endDate: range?.to ? format(range.to, "yyyy-MM-dd") : "",
+                });
+              }}
             />
           </div>
         </div>

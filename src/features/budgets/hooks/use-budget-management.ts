@@ -23,14 +23,15 @@ export function useBudgetManagement() {
   const { budgets, pagination, page, setPage, isLoading: budgetsLoading } = useBudgets();
   const { data: categories } = useCategories();
   // Fetch more expenses for budget calculation client-side
-  const { data: expensesData } = useExpenses({
-    search: "",
-    categoryId: "all",
-    startDate: "",
-    endDate: "",
-    pageSize: 1000,
-  });
-  const expenses = expensesData?.data || [];
+  // const { data: expensesData } = useExpenses({
+  //   search: "",
+  //   categoryId: "all",
+  //   startDate: "",
+  //   endDate: "",
+  //   pageSize: 1000,
+  // });
+  // const expenses = expensesData?.data || [];
+  const expenses: any[] = []; // Deprecated: spending is now calculated on backend
 
   const createMutation = useCreateBudget();
   const updateMutation = useUpdateBudget();

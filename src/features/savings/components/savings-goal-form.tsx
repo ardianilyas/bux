@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { InputError } from "@/components/ui/input-error";
 import type { SavingsGoalFormData, SavingsGoal } from "../types";
@@ -167,11 +169,14 @@ export function SavingsGoalForm({
 
       <div className="space-y-2">
         <Label htmlFor="targetDate">Target Date (optional)</Label>
-        <Input
+        <DatePicker
           id="targetDate"
-          type="date"
-          value={formData.targetDate}
-          onChange={(e) => handleChange("targetDate", e.target.value)}
+          date={formData.targetDate ? new Date(formData.targetDate) : undefined}
+          setDate={(date) => {
+            const val = date ? format(date, "yyyy-MM-dd") : "";
+            handleChange("targetDate", val);
+          }}
+          className="w-full"
         />
       </div>
 
@@ -183,8 +188,8 @@ export function SavingsGoalForm({
               key={color}
               type="button"
               className={`w-8 h-8 rounded-full transition-all ${formData.color === color
-                  ? "ring-2 ring-offset-2 ring-primary"
-                  : "hover:scale-110"
+                ? "ring-2 ring-offset-2 ring-primary"
+                : "hover:scale-110"
                 }`}
               style={{ backgroundColor: color }}
               onClick={() => handleChange("color", color)}

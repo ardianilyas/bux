@@ -130,7 +130,8 @@ export function BudgetsView() {
             <BudgetCard
               key={budget.id}
               budget={budget}
-              spent={getMonthlySpending(expenses, budget.categoryId, userBaseCurrency)}
+              // @ts-ignore - spent is added by backend aggregation
+              spent={budget.spent || 0}
               onEdit={openEditDialog}
               onDelete={setDeletingId}
               isDeleting={deleteMutation.isPending}

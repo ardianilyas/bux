@@ -7,6 +7,8 @@ import type { ExpenseFilters } from "../types";
 export function useExpenses(filters?: ExpenseFilters) {
   return trpc.expense.list.useQuery(
     {
+      page: filters?.page,
+      pageSize: filters?.pageSize,
       search: filters?.search || undefined,
       categoryId: filters?.categoryId === "all" ? undefined : filters?.categoryId,
       startDate: filters?.startDate || undefined,

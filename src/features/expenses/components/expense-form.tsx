@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { InputError } from "@/components/ui/input-error";
 import {
@@ -219,13 +221,16 @@ export function ExpenseForm({
 
       <div className="space-y-2">
         <Label htmlFor="date">Date</Label>
-        <Input
+        <DatePicker
           id="date"
-          type="date"
-          value={formData.date}
-          onChange={(e) => handleChange("date", e.target.value)}
-          onBlur={() => handleBlur("date")}
-          className={errors.date ? "border-destructive" : ""}
+          date={formData.date ? new Date(formData.date) : undefined}
+          setDate={(date) => {
+            const val = date ? format(date, "yyyy-MM-dd") : "";
+            handleChange("date", val);
+            setTouched((prev) => ({ ...prev, date: true }));
+            validateField("date", val);
+          }}
+          className={errors.date ? "border-destructive w-full" : "w-full"}
         />
         <InputError message={errors.date} />
       </div>

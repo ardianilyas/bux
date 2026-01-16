@@ -43,7 +43,7 @@ export const auditRouter = createTRPCRouter({
       // Get logs with user data
       const logs = await db.query.auditLogs.findMany({
         where: whereClause,
-        orderBy: [desc(auditLogs.createdAt)],
+        orderBy: (auditLogs, { desc }) => [desc(auditLogs.createdAt)],
         limit: pageSize,
         offset,
         with: {

@@ -18,15 +18,20 @@ import { useAuditLogs } from "../hooks/use-audit";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { PaginationControl } from "@/components/ui/pagination-control";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 export function AuditLogsView() {
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const { data, isLoading } = useAuditLogs({
     page,
     pageSize: 20,
     action: actionFilter || undefined,
+    startDate: dateRange?.from,
+    endDate: dateRange?.to,
   });
 
   const getActionBadgeVariant = (action: string) => {
@@ -51,7 +56,7 @@ export function AuditLogsView() {
           <CardTitle className="text-lg">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Input
                 placeholder="Search by action..."
@@ -62,11 +67,21 @@ export function AuditLogsView() {
                 }}
               />
             </div>
-            {actionFilter && (
+            <div>
+              <DatePickerWithRange // @ts-ignore
+                date={dateRange}
+                setDate={(range) => {
+                  setDateRange(range);
+                  setPage(1);
+                }}
+              />
+            </div>
+            {(actionFilter || dateRange) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setActionFilter("");
+                  setDateRange(undefined);
                   setPage(1);
                 }}
               >

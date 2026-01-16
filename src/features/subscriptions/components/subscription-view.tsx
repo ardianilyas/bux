@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { Pencil, Trash2, PlayCircle } from "lucide-react";
 import { PaginationControl } from "@/components/ui/pagination-control";
@@ -188,11 +190,13 @@ export function SubscriptionView() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nextBilling">Next Billing Date</Label>
-                <Input
+                <DatePicker
                   id="nextBilling"
-                  type="date"
-                  value={nextBillingDate}
-                  onChange={(e) => setNextBillingDate(e.target.value)}
+                  date={nextBillingDate ? new Date(nextBillingDate) : undefined}
+                  setDate={(date) => {
+                    setNextBillingDate(date ? format(date, "yyyy-MM-dd") : "");
+                  }}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -354,11 +358,13 @@ export function SubscriptionView() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-nextBilling">Next Billing Date</Label>
-              <Input
+              <DatePicker
                 id="edit-nextBilling"
-                type="date"
-                value={editNextBillingDate}
-                onChange={(e) => setEditNextBillingDate(e.target.value)}
+                date={editNextBillingDate ? new Date(editNextBillingDate) : undefined}
+                setDate={(date) => {
+                  setEditNextBillingDate(date ? format(date, "yyyy-MM-dd") : "");
+                }}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">

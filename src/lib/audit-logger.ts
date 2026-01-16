@@ -104,6 +104,7 @@ export async function logAudit({
       metadata: metadata ? JSON.stringify(metadata) : null,
       ipAddress,
       userAgent,
+      createdAt: new Date(),
     });
   } catch (error) {
     // Log error but don't throw - audit logging should not break application flow
