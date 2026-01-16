@@ -365,7 +365,7 @@ export function AdminDashboardView() {
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                        className="h-full bg-linear-to-r from-green-500 to-emerald-500"
                         style={{ width: `${Math.min(platformActivity?.savingsProgress.averageCompletion ?? 0, 100)}%` }}
                       />
                     </div>
