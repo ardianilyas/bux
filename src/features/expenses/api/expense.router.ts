@@ -1,5 +1,11 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  expenseListInputSchema,
+  createExpenseSchema,
+  updateExpenseSchema,
+  getExpenseByIdSchema,
+  deleteExpenseSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { expenses, categories } from "@/db/schema";
 import { eq, desc, and, ilike, gte, lte, sql } from "drizzle-orm";
@@ -8,17 +14,7 @@ import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const expenseRouter = createTRPCRouter({
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-          search: z.string().optional(),
-          categoryId: z.string().optional(),
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-        })
-    )
+    .input(expenseListInputSchema)
     .query(async ({ ctx, input }) => {
       const filters = [eq(expenses.userId, ctx.session.user.id)];
 
@@ -158,7 +154,7 @@ export const expenseRouter = createTRPCRouter({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getExpenseByIdSchema)
     .query(async ({ ctx, input }) => {
       return db.query.expenses.findFirst({
         where: and(
@@ -172,16 +168,7 @@ export const expenseRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure
-    .input(
-      z.object({
-        amount: z.number().positive(),
-        description: z.string().min(1).max(255),
-        date: z.coerce.date(),
-        categoryId: z.string().uuid().optional(),
-        currency: z.string(),
-        exchangeRate: z.number().positive(),
-      })
-    )
+    .input(createExpenseSchema)
     .mutation(async ({ ctx, input }) => {
       const [expense] = await db
         .insert(expenses)
@@ -215,17 +202,7 @@ export const expenseRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        amount: z.number().positive().optional(),
-        description: z.string().min(1).max(255).optional(),
-        date: z.coerce.date().optional(),
-        categoryId: z.string().uuid().optional().nullable(),
-        currency: z.string().optional(),
-        exchangeRate: z.number().positive().optional(),
-      })
-    )
+    .input(updateExpenseSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [expense] = await db
@@ -253,7 +230,7 @@ export const expenseRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteExpenseSchema)
     .mutation(async ({ ctx, input }) => {
       await db
         .delete(expenses)

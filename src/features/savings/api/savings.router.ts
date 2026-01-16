@@ -1,5 +1,12 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  savingsListInputSchema,
+  createSavingsSchema,
+  updateSavingsSchema,
+  addFundsSchema,
+  getSavingsByIdSchema,
+  deleteSavingsSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { savingsGoals } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -8,14 +15,7 @@ import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const savingsRouter = createTRPCRouter({
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(savingsListInputSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -46,7 +46,7 @@ export const savingsRouter = createTRPCRouter({
     }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getSavingsByIdSchema)
     .query(async ({ ctx, input }) => {
       return db.query.savingsGoals.findFirst({
         where: and(
@@ -57,15 +57,7 @@ export const savingsRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1, "Name is required"),
-        targetAmount: z.number().positive("Target amount must be positive"),
-        currentAmount: z.number().min(0).optional().default(0),
-        color: z.string().optional().default("#6366f1"),
-        targetDate: z.date().optional(),
-      })
-    )
+    .input(createSavingsSchema)
     .mutation(async ({ ctx, input }) => {
       const [goal] = await db
         .insert(savingsGoals)
@@ -95,16 +87,7 @@ export const savingsRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z.string().min(1).optional(),
-        targetAmount: z.number().positive().optional(),
-        currentAmount: z.number().min(0).optional(),
-        color: z.string().optional(),
-        targetDate: z.date().nullable().optional(),
-      })
-    )
+    .input(updateSavingsSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
@@ -138,7 +121,7 @@ export const savingsRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteSavingsSchema)
     .mutation(async ({ ctx, input }) => {
       await db
         .delete(savingsGoals)
@@ -164,12 +147,7 @@ export const savingsRouter = createTRPCRouter({
     }),
 
   addFunds: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        amount: z.number().positive("Amount must be positive"),
-      })
-    )
+    .input(addFundsSchema)
     .mutation(async ({ ctx, input }) => {
       // Get current goal
       const currentGoal = await db.query.savingsGoals.findFirst({

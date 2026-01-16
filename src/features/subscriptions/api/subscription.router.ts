@@ -1,6 +1,11 @@
-import { z } from "zod";
-import { createSubscriptionSchema, updateSubscriptionSchema } from "@/lib/validations/subscription";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  subscriptionListInputSchema,
+  createSubscriptionSchema,
+  updateSubscriptionSchema,
+  getSubscriptionByIdSchema,
+  deleteSubscriptionSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { subscriptions, expenses } from "@/db/schema";
 import { eq, desc, and, lte, gte, sql } from "drizzle-orm";

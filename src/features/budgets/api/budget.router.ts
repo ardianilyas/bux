@@ -1,5 +1,11 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  budgetListInputSchema,
+  createBudgetSchema,
+  updateBudgetSchema,
+  getBudgetByIdSchema,
+  deleteBudgetSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { budgets } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -8,14 +14,7 @@ import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const budgetRouter = createTRPCRouter({
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(budgetListInputSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -48,7 +47,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getBudgetByIdSchema)
     .query(async ({ ctx, input }) => {
       return db.query.budgets.findFirst({
         where: and(
@@ -62,12 +61,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure
-    .input(
-      z.object({
-        amount: z.number().positive(),
-        categoryId: z.string().uuid(),
-      })
-    )
+    .input(createBudgetSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if budget already exists for this category
       const existing = await db.query.budgets.findFirst({
@@ -106,12 +100,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        amount: z.number().positive(),
-      })
-    )
+    .input(updateBudgetSchema)
     .mutation(async ({ ctx, input }) => {
       const [budget] = await db
         .update(budgets)
@@ -140,7 +129,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteBudgetSchema)
     .mutation(async ({ ctx, input }) => {
       await db
         .delete(budgets)

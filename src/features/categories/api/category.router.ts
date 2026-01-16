@@ -1,5 +1,11 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
+import {
+  categoryListInputSchema,
+  createCategorySchema,
+  updateCategorySchema,
+  getCategoryByIdSchema,
+  deleteCategorySchema,
+} from "../schemas";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -8,14 +14,7 @@ import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const categoryRouter = createTRPCRouter({
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(50),
-        })
-
-    )
+    .input(categoryListInputSchema)
     .query(async ({ input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -50,7 +49,7 @@ export const categoryRouter = createTRPCRouter({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getCategoryByIdSchema)
     .query(async ({ ctx, input }) => {
       // Allow fetching any category since they are shared
       return db.query.categories.findFirst({
@@ -59,13 +58,7 @@ export const categoryRouter = createTRPCRouter({
     }),
 
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1).max(50),
-        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#6366f1"),
-        icon: z.string().max(50).optional(),
-      })
-    )
+    .input(createCategorySchema)
     .mutation(async ({ ctx, input }) => {
       const [category] = await db
         .insert(categories)
@@ -93,14 +86,7 @@ export const categoryRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z.string().min(1).max(50).optional(),
-        color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-        icon: z.string().max(50).optional(),
-      })
-    )
+    .input(updateCategorySchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [category] = await db
@@ -134,7 +120,7 @@ export const categoryRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteCategorySchema)
     .mutation(async ({ ctx, input }) => {
       await db.delete(categories).where(eq(categories.id, input.id));
 
