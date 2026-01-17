@@ -5,89 +5,85 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-auth";
 import { formatCurrency } from "@/lib/utils";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import {
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell,
+  Area, AreaChart, PieChart, Pie, Legend
+} from "recharts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Store, TrendingUp, CreditCard, ShoppingBag } from "lucide-react";
+import { Store, TrendingUp, CreditCard, ShoppingBag, PieChart as PieChartIcon, Calendar as CalendarIcon, Wallet } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { subDays, format, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
 
 export function InsightsView() {
   const { data: session } = useSession();
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
   const { theme } = useTheme();
 
+  // State for date range
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+
   // Dynamic color for charts based on theme
   const [axisColor, setAxisColor] = useState("#888888");
   useEffect(() => {
-    // Check for dark mode preference (system or explicit)
     const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setAxisColor(isDark ? "#ffffff" : "#0f172a"); // White for dark mode, Slate-900 for light
+    setAxisColor(isDark ? "#ffffff" : "#0f172a");
   }, [theme]);
 
-  const { data: merchantStats, isLoading } = trpc.expense.getMerchantStats.useQuery();
+  // Determine grouping based on date range
+  const daysDiff = dateRange?.from && dateRange?.to ? differenceInDays(dateRange.to, dateRange.from) : 30;
+  const groupType = daysDiff > 90 ? 'monthly' : 'daily';
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map(i => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-4 rounded-full" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-7 w-24 mb-1" />
-                <Skeleton className="h-3 w-32" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[300px] w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[300px] w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Fetch Data
+  const { data: trendData, isLoading: isTrendLoading } = trpc.expense.getTrends.useQuery(
+    {
+      startDate: dateRange?.from,
+      endDate: dateRange?.to,
+      type: groupType
+    },
+    { enabled: !!dateRange?.from }
+  );
 
-  const topMerchants = merchantStats?.bySpend || [];
-  const topMerchantsCount = merchantStats?.byCount || [];
-  const totalMerchants = merchantStats?.totalMerchants || 0;
+  const { data: categoryData, isLoading: isCategoryLoading } = trpc.expense.getBreakdown.useQuery(
+    { startDate: dateRange?.from, endDate: dateRange?.to },
+    { enabled: !!dateRange?.from }
+  );
 
-  // Calculate summary stats
-  const topSpender = topMerchants[0];
-  const totalSpend = topMerchants.reduce((acc, curr) => acc + curr.total, 0);
-  const totalTx = topMerchants.reduce((acc, curr) => acc + curr.count, 0);
-  const avgTransaction = totalTx > 0 ? totalSpend / totalTx : 0;
+  const { data: merchantStats, isLoading: isMerchantLoading } = trpc.expense.getMerchantStats.useQuery(
+    { startDate: dateRange?.from, endDate: dateRange?.to },
+    { enabled: !!dateRange?.from }
+  );
 
-  // Colors for charts
+  const isLoading = isTrendLoading || isCategoryLoading || isMerchantLoading;
+
+  // Colors
   const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#64748b"];
 
-  // Helper to get initials
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Helper Calculations
+  const totalSpend = useMemo(() => {
+    return trendData?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+  }, [trendData]);
+
+  const avgDailySpend = useMemo(() => {
+    if (!trendData || trendData.length === 0) return 0;
+    // If grouped by month, this logic needs adjustment or just show avg per period
+    if (groupType === 'monthly') {
+      return totalSpend / trendData.length; // Avg per month
+    }
+    return totalSpend / trendData.length; // Avg per day (since trendData is filled for days)
+  }, [trendData, totalSpend, groupType]);
+
+  const topCategory = useMemo(() => {
+    return categoryData?.[0];
+  }, [categoryData]);
+
+  const topMerchants = merchantStats?.bySpend || [];
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -95,7 +91,7 @@ export function InsightsView() {
         <div className="bg-popover/90 backdrop-blur-sm border border-border p-3 rounded-lg shadow-xl text-sm z-50">
           <p className="font-semibold text-foreground mb-1">{label}</p>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted-foreground ml-0">Total:</span>
+            <span className="text-muted-foreground">Total:</span>
             <span className="font-medium font-mono text-foreground">
               {formatCurrency(payload[0].value, userBaseCurrency)}
             </span>
@@ -106,213 +102,247 @@ export function InsightsView() {
     return null;
   };
 
+  const getInitials = (name: string) => {
+    return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">Spending Insights</h2>
-        <p className="text-muted-foreground">
-          Deep dive into your spending habits and merchant data.
-        </p>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Spending Insights</h2>
+          <p className="text-muted-foreground">
+            Analyze where your money goes.
+          </p>
+        </div>
+        <DatePickerWithRange date={dateRange} setDate={setDateRange} />
       </div>
 
-      {/* Summary Cards */}
+      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 shadow-sm transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Spender</CardTitle>
-            <TrendingUp className="h-4 w-4 text-rose-500" />
+            <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
+            <Wallet className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold truncate" title={topSpender?.name || "-"}>
-              {topSpender?.name || "-"}
+            <div className="text-2xl font-bold font-mono tracking-tight">
+              {formatCurrency(totalSpend, userBaseCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {topSpender ? `Total ${formatCurrency(topSpender.total, userBaseCurrency)}` : "No data yet"}
+            <p className="text-xs text-muted-foreground mt-1">
+              in selected period
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Distinct Places</CardTitle>
-            <Store className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">
+              {groupType === 'monthly' ? "Avg. Monthly Spend" : "Avg. Daily Spend"}
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMerchants}</div>
-            <p className="text-xs text-muted-foreground">
-              Unique merchants visited
+            <div className="text-2xl font-bold font-mono tracking-tight">
+              {formatCurrency(avgDailySpend, userBaseCurrency)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              based on {trendData?.length || 0} {groupType === 'monthly' ? 'months' : 'days'}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Transaction</CardTitle>
-            <CreditCard className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-sm font-medium">Top Category</CardTitle>
+            <PieChartIcon className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(avgTransaction, userBaseCurrency)}
+            <div className="text-2xl font-bold truncate" title={topCategory?.name}>
+              {topCategory?.name || "No data"}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Average spend per visit
+            <p className="text-xs text-muted-foreground mt-1">
+              {topCategory ? formatCurrency(topCategory.amount, userBaseCurrency) : "-"}
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Main Trend Chart */}
+      <Card className="col-span-1 shadow-md border-none">
+        <CardHeader>
+          <CardTitle>Spending Trend</CardTitle>
+          <CardDescription>
+            Expenses over time ({dateRange?.from ? format(dateRange.from, "MMM d, yyyy") : "Start"} - {dateRange?.to ? format(dateRange.to, "MMM d, yyyy") : "End"})
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pl-0">
+          <div className="h-[300px] w-full">
+            {trendData && trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey={groupType === 'monthly' ? "label" : "label"}
+                    // For daily, maybe show less ticks?
+                    tick={{ fontSize: 12, fill: axisColor }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={30}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: axisColor }}
+                    tickFormatter={(value) => new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(value)}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#6366f1", strokeWidth: 1, strokeDasharray: '5 5' }} />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorAmount)"
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                <TrendingUp className="h-10 w-10 mb-2 opacity-20" />
+                <p>No spending data needed for trend</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Top Merchants Chart */}
-        <Card className="col-span-1 border-none shadow-md bg-gradient-to-br from-card to-card/50">
+        {/* Category Breakdown */}
+        <Card className="col-span-1 shadow-md border-none flex flex-col">
           <CardHeader>
-            <CardTitle>Top Merchants by Spend</CardTitle>
-            <CardDescription>Visualizing your biggest spending destinations</CardDescription>
+            <CardTitle>Categories</CardTitle>
+            <CardDescription>Spending distribution by category</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[350px] w-full">
-              {topMerchants.length > 0 ? (
+          <CardContent className="flex-1 min-h-[300px] flex items-center justify-center">
+            {categoryData && categoryData.length > 0 ? (
+              <div className="w-full h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={topMerchants.slice(0, 5)}
-                    layout="vertical"
-                    margin={{ top: 10, right: 30, left: 40, bottom: 5 }}
-                    barGap={2}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      width={100}
-                      tick={{ fontSize: 13, fill: axisColor }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.3)' }} />
-                    <Bar dataKey="total" radius={[0, 4, 4, 0]} barSize={28} animationDuration={1000}>
-                      {topMerchants.slice(0, 5).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="amount"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color || COLORS[index % COLORS.length]}
+                          strokeWidth={0}
+                        />
                       ))}
-                    </Bar>
-                  </BarChart>
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      wrapperStyle={{ fontSize: '12px' }}
+                      formatter={(value, entry: any) => {
+                        const item = categoryData.find(c => c.name === value);
+                        return (
+                          <span className="text-foreground ml-1">
+                            {value}
+                          </span>
+                        )
+                      }}
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  No merchant data available
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-muted-foreground">
+                <PieChartIcon className="h-10 w-10 mb-2 opacity-20" />
+                <p>No category data</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Most Frequent Places */}
-        <Card className="col-span-1 flex flex-col border-none shadow-md">
+        {/* Top Merchants List (Refined) */}
+        <Card className="col-span-1 shadow-md border-none flex flex-col">
           <CardHeader>
-            <CardTitle>Frequent Places</CardTitle>
-            <CardDescription>Where you shop the most often</CardDescription>
+            <CardTitle>Top Merchants</CardTitle>
+            <CardDescription>Where you spent the most</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 p-0">
-            <ScrollArea className="h-[350px] px-6 pb-4">
-              {topMerchantsCount.length > 0 ? (
-                <div className="space-y-5">
-                  {topMerchantsCount.map((merchant, index) => {
-                    // Calculate width for progress bar feel
-                    const maxCount = topMerchantsCount[0].count;
-                    const widthPercent = (merchant.count / maxCount) * 100;
-
-                    return (
-                      <div key={merchant.name} className="group relative">
-                        {/* Background Progress Bar */}
+          <CardContent className="p-0 flex-1">
+            <ScrollArea className="h-[300px]">
+              {topMerchants.length > 0 ? (
+                <div className="divide-y divide-border/50">
+                  {topMerchants.slice(0, 6).map((merchant, i) => (
+                    <div key={merchant.name} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
                         <div
-                          className="absolute inset-0 bg-muted/30 rounded-lg transition-all duration-500"
-                          style={{ width: `${widthPercent}%`, zIndex: 0 }}
-                        />
-
-                        <div className="relative z-10 flex items-center justify-between p-2 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="flex items-center justify-center h-9 w-9 rounded-full text-xs font-bold text-white shadow-sm ring-2 ring-background"
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                            >
-                              {getInitials(merchant.name)}
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm text-foreground">{merchant.name}</p>
-                              <p className="text-xs text-muted-foreground">{merchant.count} visits</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-sm">{formatCurrency(merchant.total, userBaseCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">Avg: {formatCurrency(merchant.avgSpend, userBaseCurrency)}</p>
-                          </div>
+                          className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white shadow-sm"
+                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                        >
+                          {getInitials(merchant.name)}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{merchant.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{merchant.count} transactions</span>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="font-mono font-medium text-sm">
+                        {formatCurrency(merchant.total, userBaseCurrency)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  No merchant data available
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8">
+                  <Store className="h-10 w-10 mb-2 opacity-20" />
+                  <p>No merchant data</p>
                 </div>
               )}
             </ScrollArea>
           </CardContent>
         </Card>
       </div>
-
-      {/* Detailed Merchant List */}
-      <Card className="border-none shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Merchant Breakdown</CardTitle>
-            <CardDescription>Comprehensive list of all merchants sorted by spend</CardDescription>
-          </div>
-          <Badge variant="outline" className="text-xs font-normal bg-muted/50">
-            {totalMerchants} Merchants
-          </Badge>
-        </CardHeader>
-        <CardContent>
-          {topMerchants.length > 0 ? (
-            <div className="space-y-2">
-              <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-muted-foreground mb-4 px-4 uppercase tracking-wider">
-                <div className="col-span-5">Merchant</div>
-                <div className="col-span-3 text-right">Visits</div>
-                <div className="col-span-4 text-right">Total Spend</div>
-              </div>
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-1">
-                  {topMerchants.map((merchant, i) => (
-                    <div
-                      key={merchant.name}
-                      className="grid grid-cols-12 gap-4 py-3 px-4 hover:bg-muted/60 hover:scale-[1.01] transition-all duration-200 rounded-lg items-center text-sm group cursor-default"
-                    >
-                      <div className="col-span-5 font-medium flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-muted-foreground bg-muted group-hover:bg-background group-hover:text-foreground transition-colors border border-border"
-                        >
-                          {getInitials(merchant.name)}
-                        </div>
-                        <span className="truncate">{merchant.name}</span>
-                      </div>
-                      <div className="col-span-3 text-right text-muted-foreground font-mono">
-                        {merchant.count}
-                      </div>
-                      <div className="col-span-4 text-right font-medium font-mono text-foreground">
-                        {formatCurrency(merchant.total, userBaseCurrency)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          ) : (
-            <div className="py-20 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <ShoppingBag className="h-10 w-10 text-muted-foreground/30" />
-              <p>No merchant data available yet.</p>
-              <p className="text-sm">Start adding merchants to your expenses to see insights here.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-[300px]" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 w-full" />)}
+      </div>
+      <Skeleton className="h-[350px] w-full" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <Skeleton className="h-[350px] w-full" />
+        <Skeleton className="h-[350px] w-full" />
+      </div>
+    </div>
+  )
 }

@@ -55,6 +55,7 @@ export function useExpenseManagement() {
       categoryId: "",
       currency: userBaseCurrency,
       exchangeRate: "1",
+      merchant: "",
     });
   };
 
@@ -75,6 +76,7 @@ export function useExpenseManagement() {
         categoryId: formData.categoryId || undefined,
         currency: formData.currency,
         exchangeRate: parseFloat(formData.exchangeRate),
+        merchant: formData.merchant || undefined,
       },
       {
         onSuccess: () => {
@@ -104,6 +106,7 @@ export function useExpenseManagement() {
         categoryId: formData.categoryId || null,
         currency: formData.currency,
         exchangeRate: parseFloat(formData.exchangeRate),
+        merchant: formData.merchant || undefined,
       },
       {
         onSuccess: () => {
@@ -135,6 +138,7 @@ export function useExpenseManagement() {
       categoryId: expense.categoryId || "",
       currency: expense.currency || userBaseCurrency,
       exchangeRate: (expense.exchangeRate || 1).toString(),
+      merchant: expense.merchant || "",
     });
   };
 

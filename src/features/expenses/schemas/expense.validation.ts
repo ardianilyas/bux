@@ -60,3 +60,12 @@ export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type GetExpenseByIdInput = z.infer<typeof getExpenseByIdSchema>;
 export type DeleteExpenseInput = z.infer<typeof deleteExpenseSchema>;
 export type CalendarDataInput = z.infer<typeof calendarDataInputSchema>;
+
+// Schema for analytics date filtering
+export const analyticsInputSchema = z.object({
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  type: z.enum(['daily', 'monthly']).optional().default('daily'),
+});
+
+export type AnalyticsInput = z.infer<typeof analyticsInputSchema>;

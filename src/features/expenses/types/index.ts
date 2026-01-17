@@ -26,6 +26,7 @@ export type ExpenseFormData = {
   categoryId: string;
   currency: string;
   exchangeRate: string;
+  merchant?: string;
 };
 
 export type ExpenseFilters = {
