@@ -1,5 +1,11 @@
-import { z } from "zod";
 import { createTRPCRouter, adminProcedure, protectedProcedure } from "@/trpc/init";
+import {
+  announcementListInputSchema,
+  getActiveAnnouncementsSchema,
+  createAnnouncementSchema,
+  updateAnnouncementSchema,
+  deleteAnnouncementSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { announcements } from "@/db/schema";
 import { eq, desc, and, lte, or, isNull, gte, sql } from "drizzle-orm";
@@ -8,16 +14,8 @@ import { ANNOUNCEMENT_TYPES } from "@/lib/constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
 
 export const announcementRouter = createTRPCRouter({
-  // Admin: List all announcements
   list: adminProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(announcementListInputSchema)
     .query(async ({ input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -45,18 +43,8 @@ export const announcementRouter = createTRPCRouter({
       };
     }),
 
-  // Admin: Create announcement
   create: adminProcedure
-    .input(
-      z.object({
-        title: z.string().min(1),
-        message: z.string().min(1),
-        type: z.enum(["info", "success", "warning", "critical"]),
-        isActive: z.boolean().default(true),
-        startsAt: z.date().optional(),
-        expiresAt: z.date().optional(),
-      })
-    )
+    .input(createAnnouncementSchema)
     .mutation(async ({ ctx, input }) => {
       const [announcement] = await db
         .insert(announcements)
@@ -86,19 +74,8 @@ export const announcementRouter = createTRPCRouter({
       return announcement;
     }),
 
-  // Admin: Update announcement
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        title: z.string().min(1).optional(),
-        message: z.string().min(1).optional(),
-        type: z.enum(["info", "success", "warning", "critical"]).optional(),
-        isActive: z.boolean().optional(),
-        startsAt: z.date().optional(),
-        expiresAt: z.date().optional().nullable(),
-      })
-    )
+    .input(updateAnnouncementSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [announcement] = await db
@@ -122,9 +99,8 @@ export const announcementRouter = createTRPCRouter({
       return announcement;
     }),
 
-  // Admin: Delete announcement
   delete: adminProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(deleteAnnouncementSchema)
     .mutation(async ({ ctx, input }) => {
       await db.delete(announcements).where(eq(announcements.id, input.id));
 
@@ -142,16 +118,8 @@ export const announcementRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // User: Get active announcements
   getActive: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(getActiveAnnouncementsSchema)
     .query(async ({ input }) => {
       const now = new Date();
       const whereClause = and(

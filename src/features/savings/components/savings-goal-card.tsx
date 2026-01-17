@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SavingsGoal } from "../types";
 import { getProgressColor } from "../types";
 import { formatCurrency } from "@/lib/utils";
+import { Plus, Pencil, Trash2, Trophy, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 type SavingsGoalCardProps = {
   goal: SavingsGoal;
@@ -51,7 +59,14 @@ export function SavingsGoalCard({
   const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <Card className="hover:border-primary/50 transition-colors">
+    <Card className="hover:border-primary/50 transition-all hover:shadow-md relative overflow-hidden">
+      {isComplete && (
+        <div className="absolute top-2 right-2">
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full p-2">
+            <Trophy className="h-4 w-4" />
+          </div>
+        </div>
+      )}
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-4">
           {/* Circular Progress */}
@@ -88,12 +103,14 @@ export function SavingsGoalCard({
             </div>
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-lg text-foreground">{goal.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {formatCurrency(goal.currentAmount, userBaseCurrency)} of{" "}
-              {formatCurrency(goal.targetAmount, userBaseCurrency)}
+            <CardTitle className="text-lg text-foreground pr-10">{goal.name}</CardTitle>
+            <p className="text-sm font-medium text-foreground">
+              {formatCurrency(goal.currentAmount, userBaseCurrency)}
             </p>
             <p className="text-xs text-muted-foreground">
+              of {formatCurrency(goal.targetAmount, userBaseCurrency)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
               {getEstimatedCompletion()}
             </p>
           </div>
@@ -123,68 +140,35 @@ export function SavingsGoalCard({
           <Button
             variant="default"
             size="sm"
-            className="bg-green-600 hover:bg-green-700"
+            className="flex-1 bg-green-600 text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
             onClick={() => onAddFunds(goal)}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-1"
-            >
-              <path d="M5 12h14" />
-              <path d="M12 5v14" />
-            </svg>
-            Add
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add Funds
           </Button>
-          <Button variant="outline" size="sm" onClick={() => onEdit(goal)}>
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-500 hover:text-red-600"
-            onClick={() => onDelete(goal.id)}
-            disabled={isDeleting}
-          >
-            Delete
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="px-2">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(goal)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Goal
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(goal.id)}
+                disabled={isDeleting}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Goal
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function SavingsGoalEmptyState() {
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="48"
-          height="48"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-muted-foreground mb-4"
-        >
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-          <polyline points="17 21 17 13 7 13 7 21" />
-          <polyline points="7 3 7 8 15 8" />
-        </svg>
-        <p className="text-muted-foreground text-lg">No savings goals yet</p>
-        <p className="text-muted-foreground text-sm mt-1">
-          Create your first savings goal to start tracking
-        </p>
       </CardContent>
     </Card>
   );

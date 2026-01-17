@@ -1,5 +1,10 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  userListInputSchema,
+  updateUserRoleSchema,
+  updateUserStatusSchema,
+  updateCurrencySchema,
+} from "../schemas";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -45,12 +50,7 @@ export const userRouter = createTRPCRouter({
   }),
 
   list: protectedProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(10),
-      })
-    )
+    .input(userListInputSchema)
     .query(async ({ ctx, input }) => {
       // Only admins and superadmins can list users
       if (!isAdmin(ctx.session.user.role)) {
@@ -84,14 +84,7 @@ export const userRouter = createTRPCRouter({
     }),
 
   updateStatus: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        status: z.enum(["active", "suspended", "banned"]),
-        reason: z.string().optional(),
-        durationDays: z.number().positive().optional(), // null = permanent
-      })
-    )
+    .input(updateUserStatusSchema)
     .mutation(async ({ ctx, input }) => {
       // Only admins and superadmins can update user status
       if (!isAdmin(ctx.session.user.role)) {
@@ -162,12 +155,7 @@ export const userRouter = createTRPCRouter({
     }),
 
   updateRole: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        role: z.enum(["user", "admin"]), // Superadmin can only assign user or admin
-      })
-    )
+    .input(updateUserRoleSchema)
     .mutation(async ({ ctx, input }) => {
       // Only superadmins can update user roles
       if (!isSuperadmin(ctx.session.user.role)) {
@@ -219,7 +207,7 @@ export const userRouter = createTRPCRouter({
     }),
 
   updateCurrency: protectedProcedure
-    .input(z.object({ currency: z.string() }))
+    .input(updateCurrencySchema)
     .mutation(async ({ ctx, input }) => {
       // Update user currency in database
       const [updatedUser] = await db

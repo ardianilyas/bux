@@ -26,6 +26,7 @@ export const createTicketSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   description: z.string().min(1, "Description is required"),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  category: z.enum(["bug", "feature", "account", "billing", "general"]).default("general"),
 });
 
 // Schema for updating ticket status
@@ -62,6 +63,21 @@ export const deleteTicketSchema = z.object({
   id: z.string().uuid(),
 });
 
+// Schema for admin updating ticket (status, priority, assignment)
+export const adminUpdateTicketSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+});
+
+// Schema for admin adding message to ticket
+export const adminAddMessageSchema = z.object({
+  ticketId: z.string().uuid(),
+  message: z.string().min(1, "Message is required"),
+  isInternal: z.boolean().default(false),
+});
+
 // Infer types from schemas
 export type TicketListInput = z.infer<typeof ticketListInputSchema>;
 export type AdminTicketListInput = z.infer<typeof adminTicketListInputSchema>;
@@ -72,3 +88,5 @@ export type AssignTicketInput = z.infer<typeof assignTicketSchema>;
 export type AddReplyInput = z.infer<typeof addReplySchema>;
 export type GetTicketByIdInput = z.infer<typeof getTicketByIdSchema>;
 export type DeleteTicketInput = z.infer<typeof deleteTicketSchema>;
+export type AdminUpdateTicketInput = z.infer<typeof adminUpdateTicketSchema>;
+export type AdminAddMessageInput = z.infer<typeof adminAddMessageSchema>;

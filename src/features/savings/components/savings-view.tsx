@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { PaginationControl } from "@/components/ui/pagination-control";
-import { SavingsGoalCard, SavingsGoalEmptyState } from "./savings-goal-card";
+import { EmptyState } from "@/components/empty-state";
+import { Plus, PiggyBank } from "lucide-react";
+import { SavingsGoalCard } from "./savings-goal-card";
 import { SavingsGoalForm } from "./savings-goal-form";
 import { AddFundsDialog } from "./add-funds-dialog";
 import {
@@ -148,27 +150,25 @@ export function SavingsView() {
   const hasGoals = savingsGoals && savingsGoals.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-foreground">Savings Goals</h1>
+        <p className="text-muted-foreground">
+          Track your financial goals and watch your savings grow
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Savings Goals</h1>
+        <div className="flex items-center gap-2">
+          <PiggyBank className="h-5 w-5 text-primary" />
+          <span className="text-sm text-muted-foreground">
+            {hasGoals ? `${savingsGoals.length} active goal${savingsGoals.length !== 1 ? 's' : ''}` : 'Get started by creating your first goal'}
+          </span>
+        </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5v14" />
-              </svg>
+              <Plus className="mr-2 h-4 w-4" />
               Add Goal
             </Button>
           </DialogTrigger>
@@ -187,7 +187,17 @@ export function SavingsView() {
       </div>
 
       {!hasGoals ? (
-        <SavingsGoalEmptyState />
+        <EmptyState
+          icon={PiggyBank}
+          title="No savings goals yet"
+          description="Create your first savings goal to start tracking your progress toward financial freedom"
+          action={
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Your First Goal
+            </Button>
+          }
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {savingsGoals?.map((goal) => (

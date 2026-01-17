@@ -1,23 +1,24 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
+import {
+  ticketListInputSchema,
+  getTicketByIdSchema,
+  createTicketSchema,
+  addReplySchema,
+  adminTicketListInputSchema,
+  adminUpdateTicketSchema,
+  adminAddMessageSchema,
+} from "../schemas";
 import { db } from "@/db";
 import { tickets, ticketMessages, users } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { logAudit } from "@/lib/audit-logger";
 import { AUDIT_ACTIONS } from "@/lib/audit-constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
+import z from "zod";
 
 export const ticketRouter = createTRPCRouter({
-  // User: List my tickets
   list: protectedProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(ticketListInputSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -50,9 +51,8 @@ export const ticketRouter = createTRPCRouter({
       };
     }),
 
-  // User: Get single ticket with messages
   get: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getTicketByIdSchema)
     .query(async ({ ctx, input }) => {
       const ticket = await db.query.tickets.findFirst({
         where: and(
@@ -72,16 +72,8 @@ export const ticketRouter = createTRPCRouter({
       return ticket;
     }),
 
-  // User: Create ticket
   create: protectedProcedure
-    .input(
-      z.object({
-        subject: z.string().min(1),
-        description: z.string().min(1),
-        priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-        category: z.enum(["bug", "feature", "account", "billing", "general"]).default("general"),
-      })
-    )
+    .input(createTicketSchema)
     .mutation(async ({ ctx, input }) => {
       const [ticket] = await db
         .insert(tickets)
@@ -109,14 +101,8 @@ export const ticketRouter = createTRPCRouter({
       return ticket;
     }),
 
-  // User: Add message to ticket
   addMessage: protectedProcedure
-    .input(
-      z.object({
-        ticketId: z.string().uuid(),
-        message: z.string().min(1),
-      })
-    )
+    .input(addReplySchema)
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the ticket
       const ticket = await db.query.tickets.findFirst({
@@ -225,14 +211,7 @@ export const ticketRouter = createTRPCRouter({
 
   // Admin: List all tickets
   adminList: adminProcedure
-    .input(
-      z
-        .object({
-          page: z.number().min(1).default(1),
-          pageSize: z.number().min(1).max(100).default(10),
-        })
-
-    )
+    .input(adminTicketListInputSchema)
     .query(async ({ input }) => {
       const { page, pageSize } = input;
       const offset = (page - 1) * pageSize;
@@ -266,7 +245,7 @@ export const ticketRouter = createTRPCRouter({
 
   // Admin: Get single ticket with messages (including internal)
   adminGet: adminProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(getTicketByIdSchema)
     .query(async ({ input }) => {
       return db.query.tickets.findFirst({
         where: eq(tickets.id, input.id),
@@ -285,14 +264,7 @@ export const ticketRouter = createTRPCRouter({
 
   // Admin: Update ticket (status, priority, assignee)
   adminUpdate: adminProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
-        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-        assignedToId: z.string().optional().nullable(),
-      })
-    )
+    .input(adminUpdateTicketSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const [ticket] = await db
@@ -324,13 +296,7 @@ export const ticketRouter = createTRPCRouter({
 
   // Admin: Add message (can be internal)
   adminAddMessage: adminProcedure
-    .input(
-      z.object({
-        ticketId: z.string().uuid(),
-        message: z.string().min(1),
-        isInternal: z.boolean().default(false),
-      })
-    )
+    .input(adminAddMessageSchema)
     .mutation(async ({ ctx, input }) => {
       const [msg] = await db
         .insert(ticketMessages)

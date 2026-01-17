@@ -1,24 +1,12 @@
-import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "@/trpc/init";
+import { auditListInputSchema, getAuditByIdSchema } from "../schemas";
 import { db } from "@/db";
 import { auditLogs } from "@/db/schema";
 import { desc, and, gte, lte, eq, like, or, sql } from "drizzle-orm";
 
 export const auditRouter = createTRPCRouter({
-  /**
-   * Get paginated list of audit logs with filters
-   */
   getLogs: adminProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(20),
-        userId: z.string().optional(),
-        action: z.string().optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-      })
-    )
+    .input(auditListInputSchema)
     .query(async ({ input }) => {
       const { page, pageSize, userId, action, startDate, endDate } = input;
       const offset = (page - 1) * pageSize;
@@ -76,11 +64,8 @@ export const auditRouter = createTRPCRouter({
       };
     }),
 
-  /**
-   * Get single audit log by ID
-   */
   getLogById: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(getAuditByIdSchema)
     .query(async ({ input }) => {
       const log = await db.query.auditLogs.findFirst({
         where: eq(auditLogs.id, input.id),
