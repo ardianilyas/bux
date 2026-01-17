@@ -47,9 +47,16 @@ export const deleteExpenseSchema = z.object({
   id: z.string().uuid(),
 });
 
+// Schema for calendar data (expenses by month/year)
+export const calendarDataInputSchema = z.object({
+  month: z.number().min(1).max(12),
+  year: z.number().min(2000).max(2100),
+});
+
 // Infer types from schemas
 export type ExpenseListInput = z.infer<typeof expenseListInputSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type GetExpenseByIdInput = z.infer<typeof getExpenseByIdSchema>;
 export type DeleteExpenseInput = z.infer<typeof deleteExpenseSchema>;
+export type CalendarDataInput = z.infer<typeof calendarDataInputSchema>;

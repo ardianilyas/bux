@@ -5,6 +5,7 @@ import {
   updateExpenseSchema,
   getExpenseByIdSchema,
   deleteExpenseSchema,
+  calendarDataInputSchema,
 } from "../schemas";
 import { db } from "@/db";
 import { expenses, categories } from "@/db/schema";
@@ -281,6 +282,75 @@ export const expenseRouter = createTRPCRouter({
       });
 
       return expense;
+    }),
+
+  getCalendarData: protectedProcedure
+    .input(calendarDataInputSchema)
+    .query(async ({ ctx, input }) => {
+      const { month, year } = input;
+
+      // Calculate start and end dates for the month
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+      // Fetch all expenses for the month with category info
+      const expensesData = await db.query.expenses.findMany({
+        where: and(
+          eq(expenses.userId, ctx.session.user.id),
+          gte(expenses.date, startDate),
+          lte(expenses.date, endDate)
+        ),
+        orderBy: [desc(expenses.date)],
+        with: {
+          category: true,
+        },
+      });
+
+      // Group expenses by date
+      const expensesByDate: Record<string, any[]> = {};
+      let totalMonthSpending = 0;
+
+      expensesData.forEach((expense) => {
+        const dateKey = new Date(expense.date).toISOString().split('T')[0];
+        if (!expensesByDate[dateKey]) {
+          expensesByDate[dateKey] = [];
+        }
+
+        const convertedAmount = expense.amount * expense.exchangeRate;
+        totalMonthSpending += convertedAmount;
+
+        expensesByDate[dateKey].push({
+          id: expense.id,
+          amount: expense.amount,
+          convertedAmount,
+          currency: expense.currency,
+          description: expense.description,
+          merchant: expense.merchant,
+          date: expense.date,
+          category: expense.category ? {
+            id: expense.category.id,
+            name: expense.category.name,
+            color: expense.category.color,
+            icon: expense.category.icon,
+          } : null,
+        });
+      });
+
+      // Calculate daily totals
+      const dailyData = Object.entries(expensesByDate).map(([date, dayExpenses]) => ({
+        date,
+        expenses: dayExpenses,
+        total: dayExpenses.reduce((sum, exp) => sum + exp.convertedAmount, 0),
+        count: dayExpenses.length,
+      }));
+
+      return {
+        month,
+        year,
+        dailyData,
+        totalMonthSpending: Math.round(totalMonthSpending),
+        expenseCount: expensesData.length,
+      };
     }),
 
   delete: protectedProcedure
