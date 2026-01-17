@@ -62,6 +62,11 @@ export const ticketRouter = createTRPCRouter({
         ),
         with: {
           assignedTo: true,
+          user: {
+            columns: {
+              name: true
+            }
+          },
           messages: {
             orderBy: [desc(ticketMessages.createdAt)],
             with: {

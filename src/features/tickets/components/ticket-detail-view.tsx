@@ -187,7 +187,7 @@ export function TicketDetailView() {
         <div className="flex-1 space-y-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketCode}</span>
               <span className="text-xs text-muted-foreground">•</span>
               <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
             </div>
@@ -212,7 +212,7 @@ export function TicketDetailView() {
                   <User className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{ticket.user?.name || "You"}</p>
+                  <p className="text-sm font-semibold">{ticket.user?.name}</p>
                   <p className="text-xs text-muted-foreground">Original Request</p>
                 </div>
               </div>

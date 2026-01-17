@@ -365,7 +365,7 @@ export function SupportView() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                      <span className="font-mono">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+                      <span className="font-mono">#{ticket.ticketCode}</span>
                       <span>•</span>
                       <span>{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
                     </div>

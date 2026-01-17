@@ -362,9 +362,11 @@ export const analyticsRouter = createTRPCRouter({
         COALESCE(
           AVG(
             EXTRACT(EPOCH FROM (
-              (SELECT MIN(created_at) FROM ticket_messages tm 
+              (SELECT MIN(tm.created_at) 
+               FROM ticket_messages tm 
+               JOIN users u ON tm.user_id = u.id
                WHERE tm.ticket_id = t.id 
-               AND tm.user_id != t.user_id)
+               AND (tm.user_id != t.user_id OR u.role IN ('admin', 'superadmin')))
               - t.created_at
             )) / 3600
           ), 0
