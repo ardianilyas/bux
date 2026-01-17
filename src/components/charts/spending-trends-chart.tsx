@@ -15,7 +15,7 @@ import { convertToBaseCurrency } from "@/lib/currency-conversion";
 
 interface SpendingTrendsChartProps {
   data: {
-    month: string;
+    label: string;
     amount: number;
   }[];
   userBaseCurrency: string;
@@ -58,7 +58,7 @@ export function SpendingTrendsChart({ data, userBaseCurrency }: SpendingTrendsCh
                 vertical={false}
               />
               <XAxis
-                dataKey="month"
+                dataKey="label"
                 axisLine={false}
                 tickLine={false}
                 tick={({ x, y, payload }) => (

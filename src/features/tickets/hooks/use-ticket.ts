@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 
 type Priority = "low" | "medium" | "high" | "urgent";
 type Category = "bug" | "feature" | "account" | "billing" | "general";
@@ -317,6 +318,9 @@ export function useAdminTicket() {
     });
   };
 
+  const { data: session } = useSession();
+  const currentUser = session?.user as any;
+
   return {
     tickets,
     pagination,
@@ -348,6 +352,7 @@ export function useAdminTicket() {
     isSending: addMessageMutation.isPending,
 
     invalidate: () => utils.ticket.adminList.invalidate(),
+    currentUser,
   };
 }
 

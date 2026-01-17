@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { useAdminTicket, type Priority, type Status } from "../hooks/use-ticket";
 import Link from "next/link";
 import { PaginationControl } from "@/components/ui/pagination-control";
@@ -45,7 +45,12 @@ import {
   Eye,
   Search,
   Filter,
-  UserPlus
+  UserPlus,
+  ListChecks,
+  MoreHorizontal,
+  Check,
+  Flag,
+  UserX
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -56,6 +61,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 const getPriorityBadge = (priority: string) => {
@@ -186,6 +192,7 @@ export function AdminTicketsView() {
     setPriorityFilter,
     assigneeFilter,
     setAssigneeFilter,
+    currentUser,
   } = useAdminTicket();
 
   if (isLoading) {
@@ -264,7 +271,7 @@ export function AdminTicketsView() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">ID</TableHead>
+                <TableHead className="w-[100px]">Code</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Category</TableHead>
@@ -288,143 +295,175 @@ export function AdminTicketsView() {
                   </TableCell>
                 </TableRow>
               ) : (
-                tickets?.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : ticket.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell className="font-medium max-w-[250px] truncate">
-                      {ticket.subject}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={ticket.user?.image || undefined} />
-                          <AvatarFallback className="text-[10px]">{ticket.user?.name?.charAt(0) || "?"}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{ticket.user?.name || "Unknown"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getCategoryBadge(ticket.category)}
-                    </TableCell>
-                    <TableCell>
-                      {getPriorityBadge(ticket.priority)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(ticket.status)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {ticket.assignedTo?.name || (
-                          <span className="text-muted-foreground">Unassigned</span>
+                tickets?.map((ticket: any) => {
+                  const canManage = currentUser?.role === "superadmin" || (currentUser?.role === "admin" && ticket.assignedToId === currentUser?.id);
+
+                  return (
+                    <TableRow key={ticket.id}>
+                      <TableCell className="font-medium">{ticket.ticketCode}</TableCell>
+                      <TableCell>{ticket.subject}</TableCell>
+                      <TableCell>{ticket.user.name}</TableCell>
+                      <TableCell>{getCategoryBadge(ticket.category)}</TableCell>
+                      <TableCell>{getPriorityBadge(ticket.priority)}</TableCell>
+                      <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                      <TableCell>
+                        {ticket.assignedTo ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={ticket.assignedTo.image} />
+                              <AvatarFallback className="text-[10px]">{ticket.assignedTo.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span>{ticket.assignedTo.name}</span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline">Unassigned</Badge>
                         )}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <ArrowRight className="mr-2 h-4 w-4" />
-                              Change Priority
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "urgent")}>
-                                <Siren className="mr-2 h-4 w-4 text-red-600" />
-                                Urgent
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "high")}>
-                                <ArrowUp className="mr-2 h-4 w-4 text-orange-600" />
-                                High
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "medium")}>
-                                <ArrowRight className="mr-2 h-4 w-4 text-yellow-600" />
-                                Medium
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "low")}>
-                                <ArrowDown className="mr-2 h-4 w-4 text-green-600" />
-                                Low
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <Circle className="mr-2 h-4 w-4" />
-                              Change Status
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "open")}>
-                                <Circle className="mr-2 h-4 w-4 text-blue-600" />
-                                Open
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "in_progress")}>
-                                <Timer className="mr-2 h-4 w-4 text-purple-600" />
-                                In Progress
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "resolved")}>
-                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                                Resolved
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "closed")}>
-                                <XCircle className="mr-2 h-4 w-4 text-gray-600" />
-                                Closed
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <User className="mr-2 h-4 w-4" />
-                              Assign To
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => handleAssign(ticket.id, null)}>
-                                Unassigned
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {admins?.map((admin: any) => (
-                                <DropdownMenuItem key={admin.id} onClick={() => handleAssign(ticket.id, admin.id)}>
-                                  {admin.name}
+                      </TableCell>
+                      <TableCell>{format(new Date(ticket.createdAt), "MMM d, yyyy")}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild disabled={!canManage}>
+                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={!canManage}>
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <ListChecks className="mr-2 h-4 w-4" />
+                                Status
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "open")}>
+                                  <div className="flex items-center gap-2">
+                                    <Circle className="h-3 w-3 text-blue-500" />
+                                    Open
+                                    {ticket.status === "open" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
                                 </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/admin/tickets/${ticket.id}`} className="cursor-pointer">
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "in_progress")}>
+                                  <div className="flex items-center gap-2">
+                                    <Timer className="h-3 w-3 text-purple-500" />
+                                    In Progress
+                                    {ticket.status === "in_progress" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "resolved")}>
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                    Resolved
+                                    {ticket.status === "resolved" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(ticket.id, "closed")}>
+                                  <div className="flex items-center gap-2">
+                                    <XCircle className="h-3 w-3 text-gray-500" />
+                                    Closed
+                                    {ticket.status === "closed" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Flag className="mr-2 h-4 w-4" />
+                                Priority
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuLabel>Update Priority</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "urgent")}>
+                                  <div className="flex items-center gap-2">
+                                    <Flag className="h-3 w-3 text-red-500" />
+                                    Urgent
+                                    {ticket.priority === "urgent" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "high")}>
+                                  <div className="flex items-center gap-2">
+                                    <Flag className="h-3 w-3 text-orange-500" />
+                                    High
+                                    {ticket.priority === "high" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "medium")}>
+                                  <div className="flex items-center gap-2">
+                                    <Flag className="h-3 w-3 text-yellow-500" />
+                                    Medium
+                                    {ticket.priority === "medium" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdatePriority(ticket.id, "low")}>
+                                  <div className="flex items-center gap-2">
+                                    <Flag className="h-3 w-3 text-green-500" />
+                                    Low
+                                    {ticket.priority === "low" && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Assign
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuLabel>Assign To</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleAssign(ticket.id, null)}>
+                                  <div className="flex items-center gap-2">
+                                    <UserX className="h-4 w-4" />
+                                    Unassign
+                                    {!ticket.assignedToId && <Check className="ml-auto h-4 w-4" />}
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {admins?.map((admin: any) => (
+                                  <DropdownMenuItem key={admin.id} onClick={() => handleAssign(ticket.id, admin.id)}>
+                                    <div className="flex items-center gap-2">
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarImage src={admin.image} />
+                                        <AvatarFallback className="text-[10px]">{admin.name.charAt(0)}</AvatarFallback>
+                                      </Avatar>
+                                      <span>{admin.name}</span>
+                                      {ticket.assignedToId === admin.id && <Check className="ml-auto h-4 w-4" />}
+                                    </div>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/admin/tickets/${ticket.id}`} className="cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </CardContent>
+        {pagination && (
+          <div className="p-4 border-t">
+            <PaginationControl
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </Card>
-
-      {pagination && (
-        <div className="flex justify-end mt-4">
-          <PaginationControl
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )
-      }
-    </div >
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "@/trpc/init";
+import { TRPCError } from "@trpc/server";
 import {
   ticketListInputSchema,
   getTicketByIdSchema,
@@ -9,7 +10,7 @@ import {
   adminAddMessageSchema,
 } from "../schemas";
 import { db } from "@/db";
-import { tickets, ticketMessages, users } from "@/db/schema";
+import { tickets, ticketMessages, users, counters } from "@/db/schema";
 import { eq, desc, and, sql, or } from "drizzle-orm";
 import { logAudit } from "@/lib/audit-logger";
 import { AUDIT_ACTIONS } from "@/lib/audit-constants";
@@ -75,16 +76,33 @@ export const ticketRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createTicketSchema)
     .mutation(async ({ ctx, input }) => {
-      const [ticket] = await db
-        .insert(tickets)
-        .values({
-          subject: input.subject,
-          description: input.description,
-          priority: input.priority,
-          category: input.category,
-          userId: ctx.session.user.id,
-        })
-        .returning();
+      const ticket = await db.transaction(async (tx) => {
+        // Get next ticket number from counters
+        const [counter] = await tx
+          .insert(counters)
+          .values({ name: "tickets", count: 1 })
+          .onConflictDoUpdate({
+            target: counters.name,
+            set: { count: sql`${counters.count} + 1` },
+          })
+          .returning();
+
+        const ticketCode = `BUX-${counter.count.toString().padStart(4, "0")}`;
+
+        const [newTicket] = await tx
+          .insert(tickets)
+          .values({
+            ticketCode,
+            subject: input.subject,
+            description: input.description,
+            priority: input.priority,
+            category: input.category,
+            userId: ctx.session.user.id,
+          })
+          .returning();
+
+        return newTicket;
+      });
 
       // Log audit event
       const { ipAddress, userAgent } = await getRequestMetadata();
@@ -96,7 +114,7 @@ export const ticketRouter = createTRPCRouter({
         metadata: {
           subject: input.subject,
           priority: input.priority,
-          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined
+          ticketCode: ticket.ticketCode,
         },
         ipAddress,
         userAgent,
@@ -139,7 +157,7 @@ export const ticketRouter = createTRPCRouter({
         targetType: "ticket",
         metadata: {
           messageId: msg.id,
-          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined,
+          ticketCode: ticket.ticketCode,
         },
         ipAddress,
         userAgent,
@@ -192,7 +210,7 @@ export const ticketRouter = createTRPCRouter({
         targetType: "ticket",
         metadata: {
           ...data,
-          ticketCode: updated.ticketNumber ? `BUX-${updated.ticketNumber.toString().padStart(4, "0")}` : undefined
+          ticketCode: updated.ticketCode ?? undefined
         },
         ipAddress,
         userAgent,
@@ -296,6 +314,27 @@ export const ticketRouter = createTRPCRouter({
     .input(adminUpdateTicketSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
+
+      // Check permissions
+      const existingTicket = await db.query.tickets.findFirst({
+        where: eq(tickets.id, id),
+      });
+
+      if (!existingTicket) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
+      }
+
+      const canManage =
+        ctx.session.user.role === "superadmin" ||
+        existingTicket.assignedToId === ctx.session.user.id;
+
+      if (!canManage) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized to manage this ticket",
+        });
+      }
+
       const [ticket] = await db
         .update(tickets)
         .set({ ...data, updatedAt: new Date() })
@@ -317,7 +356,7 @@ export const ticketRouter = createTRPCRouter({
         targetType: "ticket",
         metadata: {
           ...data,
-          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined
+          ticketCode: ticket.ticketCode ?? undefined
         },
         ipAddress,
         userAgent,
@@ -330,6 +369,27 @@ export const ticketRouter = createTRPCRouter({
   adminAddMessage: adminProcedure
     .input(adminAddMessageSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check permissions
+      const existingTicket = await db.query.tickets.findFirst({
+        where: eq(tickets.id, input.ticketId),
+        columns: { ticketCode: true, assignedToId: true },
+      });
+
+      if (!existingTicket) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
+      }
+
+      const canManage =
+        ctx.session.user.role === "superadmin" ||
+        existingTicket.assignedToId === ctx.session.user.id;
+
+      if (!canManage) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized to manage this ticket",
+        });
+      }
+
       const [msg] = await db
         .insert(ticketMessages)
         .values({
@@ -347,12 +407,6 @@ export const ticketRouter = createTRPCRouter({
         .set({ updatedAt: new Date() })
         .where(eq(tickets.id, input.ticketId));
 
-      // Fetch ticket for metadata
-      const ticket = await db.query.tickets.findFirst({
-        where: eq(tickets.id, input.ticketId),
-        columns: { ticketNumber: true },
-      });
-
       // Log audit event
       const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
@@ -363,7 +417,7 @@ export const ticketRouter = createTRPCRouter({
         metadata: {
           messageId: msg.id,
           isInternal: input.isInternal,
-          ticketCode: ticket?.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined,
+          ticketCode: existingTicket?.ticketCode ?? undefined,
         },
         ipAddress,
         userAgent,

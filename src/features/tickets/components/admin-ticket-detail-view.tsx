@@ -28,7 +28,8 @@ import {
   CreditCard,
   MessageSquare,
   MessageCircle,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -49,6 +50,7 @@ import {
 } from "@/components/ui/select";
 import Link from "next/link";
 import { useAdminTicketManagement } from "../hooks/use-admin-ticket-management";
+import { cn } from "@/lib/utils";
 
 type Priority = "low" | "medium" | "high" | "urgent";
 type Status = "open" | "in_progress" | "resolved" | "closed";
@@ -178,6 +180,10 @@ export function AdminTicketDetailView() {
     handleUpdateStatus,
     handleUpdatePriority,
     handleUpdateAssignee,
+    canManage,
+    quickResponse,
+    handleQuickResponse,
+    isSending,
   } = useAdminTicketManagement();
 
   if (isLoading) {
@@ -189,20 +195,9 @@ export function AdminTicketDetailView() {
     );
   }
 
-  if (!ticket) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Ticket not found</p>
-        <Link href="/dashboard/admin/tickets">
-          <Button variant="outline" className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tickets
-          </Button>
-        </Link>
-      </div>
-    );
-  }
+  if (!ticket) return null;
 
+  const isReadOnly = !canManage;
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Enhanced Header */}
@@ -295,42 +290,62 @@ export function AdminTicketDetailView() {
               <div className="pt-4 border-t space-y-3">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="admin-message" className="text-sm font-medium">Add a message or note</Label>
-                  <Select onValueChange={(val) => setNewMessage(val)}>
-                    <SelectTrigger className="w-[180px] h-8 text-xs">
-                      <SelectValue placeholder="Quick Response" />
+                  <Select
+                    value={quickResponse}
+                    onValueChange={handleQuickResponse}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Quick response..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hi there, could you please provide more details?">Request Details</SelectItem>
-                      <SelectItem value="We are currently investigating this issue.">Investigating</SelectItem>
-                      <SelectItem value="This issue has been resolved. Please verify.">Resolved</SelectItem>
-                      <SelectItem value="Please clear your browser cache and try again.">Clear Cache</SelectItem>
+                      <SelectItem value="investigating">Investigating</SelectItem>
+                      <SelectItem value="update">Update required</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Textarea
-                  id="admin-message"
-                  placeholder="Type your reply..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  rows={4}
-                  className="resize-none"
-                />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="internal"
-                      checked={isInternal}
-                      onCheckedChange={(checked) => setIsInternal(checked as boolean)}
+                <div className="p-4 bg-muted/50 border-t">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="internal-note" className="text-sm font-medium">Internal Note</Label>
+                        <Checkbox
+                          id="internal-note"
+                          checked={isInternal}
+                          onCheckedChange={(checked) => setIsInternal(checked as boolean)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+                    <Textarea
+                      placeholder={isInternal ? "Add an internal note solely for other admins..." : "Type your reply to the customer..."}
+                      className={cn("min-h-[100px]", isInternal && "bg-yellow-50/50 border-yellow-200")}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      disabled={isReadOnly}
                     />
-                    <Label htmlFor="internal" className="text-sm font-normal cursor-pointer flex items-center gap-1.5">
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                      Internal note (not visible to user)
-                    </Label>
+                    <div className="flex justify-end">
+                      <Button onClick={handleSendMessage} disabled={isSending || !newMessage.trim() || isReadOnly}>
+                        {isSending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Send Reply
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {isReadOnly && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        You cannot reply to this ticket mainly because you are not assigned to it.
+                      </p>
+                    )}
                   </div>
-                  <Button onClick={handleSendMessage} disabled={addMessageMutation.isPending || !newMessage.trim()}>
-                    <Send className="mr-2 h-4 w-4" />
-                    {addMessageMutation.isPending ? "Sending..." : "Send Message"}
-                  </Button>
                 </div>
               </div>
             </CardContent>

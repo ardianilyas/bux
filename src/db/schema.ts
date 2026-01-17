@@ -150,9 +150,15 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const counters = pgTable("counters", {
+  name: text("name").primaryKey(),
+  count: integer("count").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const tickets = pgTable("tickets", {
   id: uuid("id").defaultRandom().primaryKey(),
-  ticketNumber: serial("ticket_number"), // Auto-incrementing number for readable ID
+  ticketCode: text("ticket_code").notNull().unique(), // BUX-0001
   subject: text("subject").notNull(),
   description: text("description").notNull(),
   status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
@@ -314,6 +320,8 @@ export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
+export type Counter = typeof counters.$inferSelect;
+export type NewCounter = typeof counters.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
 export type TicketMessage = typeof ticketMessages.$inferSelect;
