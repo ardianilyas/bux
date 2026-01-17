@@ -74,7 +74,7 @@ export function AuditLogsView() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div>
-              <div className="md:w-[250px]">
+              <div>
                 <Select
                   value={actionFilter}
                   onValueChange={(value) => {

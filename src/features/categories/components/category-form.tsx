@@ -88,17 +88,18 @@ export function CategoryForm({
       </div>
       <div className="space-y-2">
         <Label>Color</Label>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-8 gap-2">
           {PRESET_COLORS.map((color) => (
             <button
               key={color}
               type="button"
-              className={`h-8 w-8 rounded-full transition-transform hover:scale-110 ${formData.color === color
-                ? "ring-2 ring-offset-2 ring-foreground"
-                : ""
+              className={`h-8 w-8 rounded-full transition-all hover:scale-110 ${formData.color === color
+                ? "ring-2 ring-offset-2 ring-foreground scale-110"
+                : "hover:ring-1 hover:ring-offset-1 hover:ring-muted-foreground"
                 }`}
               style={{ backgroundColor: color }}
               onClick={() => setFormData({ ...formData, color })}
+              title={color}
             />
           ))}
         </div>

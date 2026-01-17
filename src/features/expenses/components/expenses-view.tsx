@@ -19,6 +19,7 @@ import {
 import { ReceiptUpload } from "@/features/receipts";
 import { useExpenseManagement } from "../hooks/use-expense-management";
 import { PaginationControl } from "@/components/ui/pagination-control";
+import { Plus, Download, Receipt } from "lucide-react";
 
 export function ExpensesView() {
   const {
@@ -51,16 +52,21 @@ export function ExpensesView() {
 
   if (expensesLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Expenses</h1>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24" />
           <Skeleton className="h-10 w-32" />
         </div>
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           </CardContent>
@@ -69,84 +75,85 @@ export function ExpensesView() {
     );
   }
 
+  const hasExpenses = expenses && expenses.length > 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Expenses</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleExportCsv}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" x2="12" y1="15" y2="3" />
-            </svg>
-            Export CSV
-          </Button>
-          <ReceiptUpload />
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-2"
-                >
-                  <path d="M5 12h14" />
-                  <path d="M12 5v14" />
-                </svg>
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Expense</DialogTitle>
-              </DialogHeader>
-              <ExpenseForm
-                onSubmit={handleCreate}
-                isLoading={createMutation.isPending}
-                submitLabel="Create"
-                formData={formData}
-                setFormData={setFormData}
-                onCancel={() => {
-                  setIsCreateOpen(false);
-                  setEditingExpense(null);
-                }}
-                categories={categories}
-              />
-            </DialogContent>
-          </Dialog>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Expenses</h1>
+          <p className="text-muted-foreground">
+            Track and manage all your spending
+          </p>
+        </div>
+
+        {/* Actions Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-primary" />
+            <span className="text-sm text-muted-foreground">
+              {pagination?.total
+                ? `${pagination.total} expense${pagination.total !== 1 ? "s" : ""}`
+                : hasExpenses
+                  ? `${expenses.length} expense${expenses.length !== 1 ? "s" : ""}`
+                  : "No expenses yet"}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-2">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <ReceiptUpload />
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Add Expense</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Expense</DialogTitle>
+                </DialogHeader>
+                <ExpenseForm
+                  onSubmit={handleCreate}
+                  isLoading={createMutation.isPending}
+                  submitLabel="Create"
+                  formData={formData}
+                  setFormData={setFormData}
+                  onCancel={() => {
+                    setIsCreateOpen(false);
+                    setEditingExpense(null);
+                  }}
+                  categories={categories}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
+      {/* Filters */}
       <ExpenseFiltersCard
         filters={filters}
         onFiltersChange={setFilters}
         categories={categories}
       />
 
+      {/* Table/Cards */}
       <ExpenseTable
         expenses={expenses || []}
         onEdit={openEditDialog}
         onDelete={setDeletingId}
         isDeleting={deleteMutation.isPending}
+        onAddExpense={() => {
+          resetForm();
+          setIsCreateOpen(true);
+        }}
       />
 
       {/* Edit Dialog */}
@@ -181,8 +188,8 @@ export function ExpensesView() {
         isDeleting={deleteMutation.isPending}
       />
 
-      {pagination && (
-        <div className="flex justify-end mt-4">
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center sm:justify-end mt-4">
           <PaginationControl
             currentPage={pagination.page}
             totalPages={pagination.totalPages}
