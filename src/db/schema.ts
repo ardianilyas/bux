@@ -7,6 +7,7 @@ import {
   real,
   uuid,
   jsonb,
+  serial,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -151,6 +152,7 @@ export const subscriptions = pgTable("subscriptions", {
 
 export const tickets = pgTable("tickets", {
   id: uuid("id").defaultRandom().primaryKey(),
+  ticketNumber: serial("ticket_number"), // Auto-incrementing number for readable ID
   subject: text("subject").notNull(),
   description: text("description").notNull(),
   status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
@@ -162,8 +164,8 @@ export const tickets = pgTable("tickets", {
   assignedToId: text("assigned_to_id").references(() => users.id, {
     onDelete: "set null",
   }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const ticketMessages = pgTable("ticket_messages", {
@@ -176,7 +178,7 @@ export const ticketMessages = pgTable("ticket_messages", {
     .references(() => users.id, { onDelete: "cascade" }),
   message: text("message").notNull(),
   isInternal: boolean("is_internal").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const savingsGoals = pgTable("savings_goals", {
@@ -190,8 +192,8 @@ export const savingsGoals = pgTable("savings_goals", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ==================== Relations ====================

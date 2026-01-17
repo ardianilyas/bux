@@ -10,7 +10,7 @@ import {
 } from "../schemas";
 import { db } from "@/db";
 import { tickets, ticketMessages, users } from "@/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, or } from "drizzle-orm";
 import { logAudit } from "@/lib/audit-logger";
 import { AUDIT_ACTIONS } from "@/lib/audit-constants";
 import { getRequestMetadata } from "@/lib/request-metadata";
@@ -93,7 +93,11 @@ export const ticketRouter = createTRPCRouter({
         action: AUDIT_ACTIONS.TICKET.CREATE,
         targetId: ticket.id,
         targetType: "ticket",
-        metadata: { subject: input.subject, priority: input.priority },
+        metadata: {
+          subject: input.subject,
+          priority: input.priority,
+          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined
+        },
         ipAddress,
         userAgent,
       });
@@ -126,11 +130,20 @@ export const ticketRouter = createTRPCRouter({
         })
         .returning();
 
-      // Update ticket updatedAt
-      await db
-        .update(tickets)
-        .set({ updatedAt: new Date() })
-        .where(eq(tickets.id, input.ticketId));
+      // Log audit event
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.TICKET.MESSAGE,
+        targetId: input.ticketId,
+        targetType: "ticket",
+        metadata: {
+          messageId: msg.id,
+          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined,
+        },
+        ipAddress,
+        userAgent,
+      });
 
       return msg;
     }),
@@ -177,7 +190,10 @@ export const ticketRouter = createTRPCRouter({
         action: AUDIT_ACTIONS.TICKET.UPDATE,
         targetId: input.id,
         targetType: "ticket",
-        metadata: data,
+        metadata: {
+          ...data,
+          ticketCode: updated.ticketNumber ? `BUX-${updated.ticketNumber.toString().padStart(4, "0")}` : undefined
+        },
         ipAddress,
         userAgent,
       });
@@ -213,10 +229,21 @@ export const ticketRouter = createTRPCRouter({
   adminList: adminProcedure
     .input(adminTicketListInputSchema)
     .query(async ({ input }) => {
-      const { page, pageSize } = input;
+      const { page, pageSize, status, priority, assigneeId, search } = input;
       const offset = (page - 1) * pageSize;
 
+      const filters = and(
+        status ? eq(tickets.status, status) : undefined,
+        priority ? eq(tickets.priority, priority) : undefined,
+        assigneeId ? eq(tickets.assignedToId, assigneeId) : undefined,
+        search ? or(
+          sql`${tickets.subject} ILIKE ${`%${search}%`}`,
+          sql`${tickets.description} ILIKE ${`%${search}%`}`
+        ) : undefined
+      );
+
       const data = await db.query.tickets.findMany({
+        where: filters,
         orderBy: [desc(tickets.createdAt)],
         limit: pageSize,
         offset: offset,
@@ -228,7 +255,9 @@ export const ticketRouter = createTRPCRouter({
 
       const [totalResult] = await db
         .select({ count: sql<number>`count(*)::int` })
-        .from(tickets);
+        .from(tickets)
+        .where(filters);
+
 
       const total = totalResult?.count ?? 0;
 
@@ -286,7 +315,10 @@ export const ticketRouter = createTRPCRouter({
         action,
         targetId: id,
         targetType: "ticket",
-        metadata: data,
+        metadata: {
+          ...data,
+          ticketCode: ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined
+        },
         ipAddress,
         userAgent,
       });
@@ -315,6 +347,12 @@ export const ticketRouter = createTRPCRouter({
         .set({ updatedAt: new Date() })
         .where(eq(tickets.id, input.ticketId));
 
+      // Fetch ticket for metadata
+      const ticket = await db.query.tickets.findFirst({
+        where: eq(tickets.id, input.ticketId),
+        columns: { ticketNumber: true },
+      });
+
       // Log audit event
       const { ipAddress, userAgent } = await getRequestMetadata();
       await logAudit({
@@ -325,6 +363,7 @@ export const ticketRouter = createTRPCRouter({
         metadata: {
           messageId: msg.id,
           isInternal: input.isInternal,
+          ticketCode: ticket?.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : undefined,
         },
         ipAddress,
         userAgent,

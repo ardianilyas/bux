@@ -8,7 +8,7 @@ import { z } from "zod";
 export const ticketListInputSchema = z.object({
   page: z.number().min(1).default(1),
   pageSize: z.number().min(1).max(100).default(10),
-  status: z.enum(["open", "in-progress", "resolved", "closed"]).optional(),
+  status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
 });
 
@@ -16,9 +16,10 @@ export const ticketListInputSchema = z.object({
 export const adminTicketListInputSchema = z.object({
   page: z.number().min(1).default(1),
   pageSize: z.number().min(1).max(100).default(10),
-  status: z.enum(["open", "in-progress", "resolved", "closed"]).optional(),
+  status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-  assigneeId: z.string().uuid().optional(),
+  assigneeId: z.string().optional(),
+  search: z.string().optional(),
 });
 
 // Schema for creating a new ticket
@@ -32,7 +33,7 @@ export const createTicketSchema = z.object({
 // Schema for updating ticket status
 export const updateTicketStatusSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(["open", "in-progress", "resolved", "closed"]),
+  status: z.enum(["open", "in_progress", "resolved", "closed"]),
 });
 
 // Schema for updating ticket priority
@@ -44,7 +45,7 @@ export const updateTicketPrioritySchema = z.object({
 // Schema for assigning ticket
 export const assignTicketSchema = z.object({
   id: z.string().uuid(),
-  assigneeId: z.string().uuid().nullable(),
+  assigneeId: z.string().nullable(),
 });
 
 // Schema for adding reply to ticket
@@ -68,7 +69,7 @@ export const adminUpdateTicketSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
-  assignedToId: z.string().uuid().nullable().optional(),
+  assignedToId: z.string().nullable().optional(),
 });
 
 // Schema for admin adding message to ticket

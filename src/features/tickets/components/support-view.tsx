@@ -42,13 +42,20 @@ import {
   XCircle,
   ArrowUp,
   ArrowDown,
-  Minus,
+  ArrowRight,
   Siren,
-  ArrowRight
+  Search,
+  Filter,
+  User,
+  CreditCard,
+  Zap,
+  Bug,
+  Ghost
 } from "lucide-react";
-import { useTicket, type Priority, type Category } from "../hooks/use-ticket";
+import { useTicket, type Priority, type Category, type Status } from "../hooks/use-ticket";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
+import { cn } from "@/lib/utils";
 
 const getPriorityBadge = (priority: string) => {
   switch (priority) {
@@ -120,9 +127,17 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const formatStatus = (status: string) => {
-  return status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
-};
+// Map status to a background color for the card
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "open": return "bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30";
+    case "in_progress": return "bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800/30";
+    case "resolved": return "bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-800/30";
+    case "closed": return "bg-slate-50/50 dark:bg-slate-900/10 border-slate-100 dark:border-slate-800/30";
+    default: return "bg-card border-muted";
+  }
+}
+
 
 export function SupportView() {
   const {
@@ -155,6 +170,13 @@ export function SupportView() {
     openDeleteDialog,
     handleDelete,
     isDeleting,
+    // Filter
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
     // Utils
     resetForm,
   } = useTicket();
@@ -163,6 +185,7 @@ export function SupportView() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-full" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32" />
@@ -173,12 +196,12 @@ export function SupportView() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Support</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Support Center</h1>
           <p className="text-muted-foreground">
-            Need help? Submit a ticket and we&apos;ll get back to you.
+            Get help with your issues or browse your ticket history.
           </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -186,7 +209,7 @@ export function SupportView() {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="lg" className="shadow-md">
               <Plus className="mr-2 h-4 w-4" />
               New Ticket
             </Button>
@@ -202,7 +225,7 @@ export function SupportView() {
                   id="subject"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Brief summary of your issue"
+                  placeholder="e.g. Cannot process credit card payment"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -242,7 +265,7 @@ export function SupportView() {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your issue in detail..."
+                  placeholder="Please describe your issue in detail. Include any error messages or steps to reproduce."
                   rows={5}
                 />
               </div>
@@ -258,38 +281,104 @@ export function SupportView() {
         </Dialog>
       </div>
 
+      {/* Filters & Search Toolbar */}
+      <Card className="shadow-sm border-muted">
+        <div className="p-4 flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative w-full md:w-[300px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tickets..."
+              className="pl-9 bg-background/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Status | "all")}>
+              <SelectTrigger className="w-[140px]">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Filter className="h-3.5 w-3.5" />
+                  <SelectValue placeholder="All Status" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as Priority | "all")}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(searchQuery || statusFilter !== 'all' || priorityFilter !== 'all') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setPriorityFilter("all");
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       {tickets?.length === 0 ? (
-        <EmptyState
-          icon={MessageCircle}
-          title="No tickets yet"
-          description="You haven't created any support tickets yet. If you need help, feel free to create one."
-          action={
-            <Button onClick={() => setIsCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Ticket
-            </Button>
-          }
-        />
+        <div className="pt-8">
+          <EmptyState
+            icon={searchQuery ? Search : Ghost}
+            title={searchQuery ? "No matching tickets" : "No tickets yet"}
+            description={searchQuery ? "Try adjusting your filters or search terms." : "You haven't created any support tickets yet. If you need help, feel free to create one."}
+            action={
+              !searchQuery ? (
+                <Button onClick={() => setIsCreateOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Ticket
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tickets?.map((ticket: any) => (
-            <Card key={ticket.id} className="hover:border-primary/50 transition-colors flex flex-col">
+            <Card key={ticket.id} className={cn("group relative overflow-hidden transition-all hover:shadow-md", getStatusColor(ticket.status))}>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <Link href={`/dashboard/support/${ticket.id}`}>
-                      <CardTitle className="text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                      <span className="font-mono">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+                      <span>•</span>
+                      <span>{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
+                    </div>
+                    <Link href={`/dashboard/support/${ticket.id}`} className="block">
+                      <CardTitle className="text-base font-semibold leading-tight group-hover:text-primary transition-colors cursor-pointer line-clamp-1">
                         {ticket.subject}
                       </CardTitle>
                     </Link>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
-                    </p>
                   </div>
                   {ticket.status === "open" && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -309,25 +398,24 @@ export function SupportView() {
                     </DropdownMenu>
                   )}
                 </div>
-                <div className="flex gap-2 pt-1">
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground line-clamp-2 min-h-10 mb-4">
+                  {ticket.description}
+                </p>
+                <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5">
                   {getStatusBadge(ticket.status)}
                   {getPriorityBadge(ticket.priority)}
                 </div>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {ticket.description}
-                </p>
               </CardContent>
             </Card>
           ))}
         </div>
-      )
-      }
+      )}
 
       {
         pagination && (
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-center sm:justify-end mt-6">
             <PaginationControl
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
@@ -417,6 +505,6 @@ export function SupportView() {
         description="Are you sure you want to delete this ticket? This action cannot be undone."
         isDeleting={isDeleting}
       />
-    </div >
+    </div>
   );
 }

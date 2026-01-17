@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { trpc } from "@/trpc/client";
 import { toast } from "sonner";
 
@@ -10,6 +11,7 @@ type Status = "open" | "in_progress" | "resolved" | "closed";
 
 interface Ticket {
   id: string;
+  ticketNumber?: number; // Optional because old tickets might not have it immediately (though we truncated)
   subject: string;
   description: string;
   priority: Priority;
@@ -47,6 +49,25 @@ export function useTicket() {
   const tickets = data?.data || [];
   const pagination = data?.pagination;
   const utils = trpc.useUtils();
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((ticket) => {
+      const matchesSearch = ticket.subject.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        ticket.description.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+      const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
+      const matchesPriority = priorityFilter === "all" || ticket.priority === priorityFilter;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [tickets, debouncedSearch, statusFilter, priorityFilter]);
 
   // Mutations
   const createMutation = trpc.ticket.create.useMutation({
@@ -160,7 +181,16 @@ export function useTicket() {
 
   return {
     // Data
-    tickets,
+    tickets: filteredTickets,
+    rawTickets: tickets,
+    // Filters
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+
     // Data
 
     pagination,
@@ -214,16 +244,32 @@ export function useAdminTicket() {
   const [newMessage, setNewMessage] = useState("");
   const [isInternal, setIsInternal] = useState(false);
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<string | "all">("all");
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
   const { data, isLoading } = trpc.ticket.adminList.useQuery(
-    { page, pageSize },
     {
-      staleTime: 0, // Data is always considered stale
-      refetchInterval: 30000, // Refetch every 30 seconds
+      page,
+      pageSize,
+      search: debouncedSearch || undefined,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      priority: priorityFilter === "all" ? undefined : priorityFilter,
+      assigneeId: assigneeFilter === "all" ? undefined : assigneeFilter,
+    },
+    {
+      staleTime: 0,
+      refetchInterval: 30000,
     }
   );
+
   const tickets = data?.data || [];
   const pagination = data?.pagination;
   const { data: admins } = trpc.ticket.getAdmins.useQuery();
@@ -278,6 +324,17 @@ export function useAdminTicket() {
     setPage,
     admins,
     isLoading,
+
+    // Filters
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+    assigneeFilter,
+    setAssigneeFilter,
+
     handleUpdateStatus,
     handleUpdatePriority,
     handleAssign,

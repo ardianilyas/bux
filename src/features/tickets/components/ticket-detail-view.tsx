@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   Send,
@@ -23,7 +24,8 @@ import {
   Zap,
   CreditCard,
   MessageSquare,
-  MessageCircle
+  MessageCircle,
+  ShieldAlert
 } from "lucide-react";
 import Link from "next/link";
 import { useTicketDetailManagement } from "../hooks/use-ticket-detail-management";
@@ -138,8 +140,6 @@ const getCategoryBadge = (category: string) => {
   }
 };
 
-
-
 export function TicketDetailView() {
   const {
     ticket,
@@ -173,25 +173,29 @@ export function TicketDetailView() {
     );
   }
 
+  const messages = ticket.messages?.filter((m: any) => !m.isInternal) || [];
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
       {/* Enhanced Header */}
       <div className="flex items-start gap-4">
         <Link href="/dashboard/support">
-          <Button variant="ghost" size="icon" className="mt-1">
+          <Button variant="ghost" size="icon" className="mt-1 hover:bg-muted/50">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
         <div className="flex-1 space-y-3">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">{ticket.subject}</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+              <span className="text-xs text-muted-foreground">•</span>
+              <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-3">{ticket.subject}</h1>
             <div className="flex flex-wrap items-center gap-2">
               {getStatusBadge(ticket.status)}
               {getPriorityBadge(ticket.priority)}
               {getCategoryBadge(ticket.category)}
-              <span className="text-sm text-muted-foreground">
-                · Created {formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}
-              </span>
             </div>
           </div>
         </div>
@@ -199,78 +203,98 @@ export function TicketDetailView() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Description */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Description</CardTitle>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Main Description Card */}
+          <Card className="shadow-sm border-muted">
+            <CardHeader className="pb-2 border-b">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{ticket.user?.name || "You"}</p>
+                  <p className="text-xs text-muted-foreground">Original Request</p>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{ticket.description}</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Conversation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ticket.messages?.filter((m: any) => !m.isInternal).length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    No messages yet. Our team will respond soon!
-                  </p>
-                </div>
-              ) : (
-                ticket.messages
-                  ?.filter((m: any) => !m.isInternal)
-                  .map((msg: any) => (
-                    <div key={msg.id} className="p-4 rounded-lg bg-muted/50 border border-border/50 hover:border-border transition-colors">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-4 w-4 text-primary" />
+          {/* Conversation Thread */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground ml-1">Discussion</h3>
+
+            {messages.length === 0 ? (
+              <div className="text-center py-8 border rounded-lg border-dashed">
+                <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground/20 mb-2" />
+                <p className="text-sm text-muted-foreground">No replies yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {messages.map((msg: any) => {
+                  const isUser = msg.user?.id === ticket.userId; // Assuming user is the creator
+                  // In reality, we might check session.user.id but for now let's assume if it's NOT an admin message it's the user
+                  // Actually the API returns user object. 
+
+                  return (
+                    <div key={msg.id} className={cn("flex gap-3 max-w-2xl", isUser ? "ml-auto flex-row-reverse" : "")}>
+                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                        {isUser ? <User className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+                      </div>
+                      <div className={cn("space-y-1", isUser ? "items-end" : "items-start")}>
+                        <div className={cn("flex items-center gap-2", isUser ? "flex-row-reverse" : "")}>
+                          <span className="text-xs font-medium text-foreground">{msg.user?.name || "Support"}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}</span>
                         </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold">{msg.user?.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                          </span>
+                        <div className={cn("rounded-2xl px-4 py-3 text-sm shadow-sm",
+                          isUser ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border border-border rounded-tl-sm"
+                        )}>
+                          <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                         </div>
                       </div>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap pl-10">{msg.message}</p>
                     </div>
-                  ))
-              )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
-              {/* Reply Form */}
-              {ticket.status !== "closed" && (
-                <div className="pt-4 border-t space-y-3">
-                  <Label htmlFor="message" className="text-sm font-medium">Add a message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <div className="flex justify-end">
+          {/* Reply Area */}
+          <Card className={cn("shadow-sm border-muted transition-all", ticket.status === "closed" ? "opacity-75" : "")}>
+            <CardContent className="p-4">
+              {ticket.status !== "closed" ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="message" className="sr-only">Message</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Type your reply here..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      rows={3}
+                      className="resize-none min-h-[100px] bg-background"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-muted-foreground">
+                      Most replies are answered within 24 hours.
+                    </p>
                     <Button onClick={handleSendMessage} disabled={addMessageMutation.isPending || !newMessage.trim()}>
                       <Send className="mr-2 h-4 w-4" />
-                      {addMessageMutation.isPending ? "Sending..." : "Send Message"}
+                      {addMessageMutation.isPending ? "Sending..." : "Send Reply"}
                     </Button>
                   </div>
                 </div>
-              )}
-
-              {ticket.status === "closed" && (
-                <div className="pt-4 border-t bg-muted/30 -mx-6 -mb-6 px-6 py-4 rounded-b-lg">
-                  <p className="text-sm text-muted-foreground text-center">
-                    This ticket is closed. Create a new ticket if you need further assistance.
+              ) : (
+                <div className="text-center py-4">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted mb-2">
+                    <XCircle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-medium text-foreground">Ticket Closed</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This ticket has been closed. Please create a new ticket for other inquiries.
                   </p>
                 </div>
               )}
@@ -278,49 +302,42 @@ export function TicketDetailView() {
           </Card>
         </div>
 
-        {/* Enhanced Sidebar */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Ticket Details</CardTitle>
+        {/* Info Sidebar */}
+        <div className="space-y-6">
+          <Card className="border-none shadow-md bg-gradient-to-br from-card to-secondary/10">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base font-semibold">Ticket Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
-                  <div className="mt-1">
-                    {getStatusBadge(ticket.status)}
-                  </div>
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</label>
+                  <div>{getStatusBadge(ticket.status)}</div>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Priority</label>
-                  <div className="mt-1">
-                    {getPriorityBadge(ticket.priority)}
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Priority</label>
+                  <div>{getPriorityBadge(ticket.priority)}</div>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</label>
-                  <div className="mt-1">
-                    {getCategoryBadge(ticket.category)}
-                  </div>
-                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Category</label>
+                <div>{getCategoryBadge(ticket.category)}</div>
               </div>
 
               {ticket.assignedTo && (
-                <div className="pt-3 border-t">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assigned To</label>
-                  <p className="mt-1 text-sm font-medium">{ticket.assignedTo.name}</p>
+                <div className="pt-4 border-t border-border/50">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Support Agent</label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                      <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                        {ticket.assignedTo.name.charAt(0)}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium">{ticket.assignedTo.name}</p>
+                  </div>
                 </div>
               )}
-
-              <div className="pt-3 border-t">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Created</label>
-                <p className="mt-1 text-sm">{new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</p>
-              </div>
             </CardContent>
           </Card>
         </div>

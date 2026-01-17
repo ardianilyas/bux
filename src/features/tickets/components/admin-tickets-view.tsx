@@ -19,6 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { useAdminTicket, type Priority, type Status } from "../hooks/use-ticket";
 import Link from "next/link";
@@ -40,7 +42,10 @@ import {
   MessageSquare,
   MessageCircle,
   MoreVertical,
-  Eye
+  Eye,
+  Search,
+  Filter,
+  UserPlus
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -173,6 +178,14 @@ export function AdminTicketsView() {
     handleAssign,
     pagination,
     setPage,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    priorityFilter,
+    setPriorityFilter,
+    assigneeFilter,
+    setAssigneeFilter,
   } = useAdminTicket();
 
   if (isLoading) {
@@ -197,10 +210,61 @@ export function AdminTicketsView() {
       </div>
 
       <Card>
+        <CardHeader className="p-4 border-b">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tickets by subject or description..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={(val: any) => setPriorityFilter(val)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={assigneeFilter} onValueChange={(val) => setAssigneeFilter(val)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Agents</SelectItem>
+                  {admins?.map((admin: any) => (
+                    <SelectItem key={admin.id} value={admin.id}>{admin.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent className="p-4">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Category</TableHead>
@@ -226,10 +290,21 @@ export function AdminTicketsView() {
               ) : (
                 tickets?.map((ticket) => (
                   <TableRow key={ticket.id}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : ticket.id.slice(0, 8)}
+                    </TableCell>
                     <TableCell className="font-medium max-w-[250px] truncate">
                       {ticket.subject}
                     </TableCell>
-                    <TableCell>{ticket.user?.name || "Unknown"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={ticket.user?.image || undefined} />
+                          <AvatarFallback className="text-[10px]">{ticket.user?.name?.charAt(0) || "?"}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{ticket.user?.name || "Unknown"}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {getCategoryBadge(ticket.category)}
                     </TableCell>
@@ -348,7 +423,8 @@ export function AdminTicketsView() {
             onPageChange={setPage}
           />
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

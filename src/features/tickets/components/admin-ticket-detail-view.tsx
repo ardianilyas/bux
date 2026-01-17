@@ -40,6 +40,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import { useAdminTicketManagement } from "../hooks/use-admin-ticket-management";
 
@@ -207,6 +214,11 @@ export function AdminTicketDetailView() {
         </Link>
         <div className="flex-1 space-y-3">
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+              <span className="text-xs text-muted-foreground">•</span>
+              <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
+            </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{ticket.subject}</h1>
             <div className="flex flex-wrap items-center gap-2">
               {getStatusBadge(ticket.status)}
@@ -281,7 +293,20 @@ export function AdminTicketDetailView() {
 
               {/* Reply Form */}
               <div className="pt-4 border-t space-y-3">
-                <Label htmlFor="admin-message" className="text-sm font-medium">Add a message or note</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="admin-message" className="text-sm font-medium">Add a message or note</Label>
+                  <Select onValueChange={(val) => setNewMessage(val)}>
+                    <SelectTrigger className="w-[180px] h-8 text-xs">
+                      <SelectValue placeholder="Quick Response" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Hi there, could you please provide more details?">Request Details</SelectItem>
+                      <SelectItem value="We are currently investigating this issue.">Investigating</SelectItem>
+                      <SelectItem value="This issue has been resolved. Please verify.">Resolved</SelectItem>
+                      <SelectItem value="Please clear your browser cache and try again.">Clear Cache</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Textarea
                   id="admin-message"
                   placeholder="Type your reply..."
@@ -341,6 +366,20 @@ export function AdminTicketDetailView() {
                   </p>
                 </div>
               </div>
+
+              <div className="pt-3 border-t">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer</label>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {ticket.user?.name?.charAt(0) || "?"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{ticket.user?.name}</p>
+                    <p className="text-xs text-muted-foreground break-all">{ticket.user?.email}</p>
+                  </div>
+                </div>
+              </div>
+
 
               <div className="pt-3 border-t">
                 <DropdownMenu>
@@ -448,6 +487,6 @@ export function AdminTicketDetailView() {
           </Card>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
