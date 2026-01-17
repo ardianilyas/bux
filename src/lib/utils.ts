@@ -51,3 +51,15 @@ function getLocaleForCurrency(currency: string): string {
   };
   return localeMap[currency] || "en-US";
 }
+
+export function formatDuration(hours: number): string {
+  if (!hours && hours !== 0) return "0m";
+
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}

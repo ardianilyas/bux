@@ -14,7 +14,7 @@ import {
   usePlatformActivity,
   useSupportMetrics,
 } from "../hooks/use-analytics";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDuration } from "@/lib/utils";
 import {
   AreaChart,
   Area,
@@ -455,7 +455,7 @@ export function AdminDashboardView() {
         <div className="grid gap-4 md:grid-cols-3">
           <StatCard
             title="Avg Response Time"
-            value={supportMetrics ? `${Math.round(supportMetrics.avgResponseTime)}h` : undefined}
+            value={supportMetrics ? formatDuration(supportMetrics.avgResponseTime) : undefined}
             loading={supportLoading}
             subtitle="First admin reply"
             icon={
@@ -467,7 +467,7 @@ export function AdminDashboardView() {
           />
           <StatCard
             title="Avg Resolution Time"
-            value={supportMetrics ? `${Math.round(supportMetrics.avgResolutionTime)}h` : undefined}
+            value={supportMetrics ? formatDuration(supportMetrics.avgResolutionTime) : undefined}
             loading={supportLoading}
             subtitle="Ticket close time"
             icon={
