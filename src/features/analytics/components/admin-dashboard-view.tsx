@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -25,15 +26,31 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AdminDashboardView() {
+  const { data: platformActivity, isLoading: platformLoading } = usePlatformActivity();
+  const [selectedCurrency, setSelectedCurrency] = useState<string | undefined>(undefined);
+
+  // Auto-select top currency when data loads
+  useEffect(() => {
+    if (platformActivity?.currencies?.[0] && !selectedCurrency) {
+      setSelectedCurrency(platformActivity.currencies[0].currency);
+    }
+  }, [platformActivity, selectedCurrency]);
+
   const { data: stats, isLoading: statsLoading } = useSystemStats();
   const { data: userGrowth, isLoading: growthLoading } = useUserGrowth();
-  const { data: expenseTrends, isLoading: trendsLoading } = useExpenseTrends();
+  const { data: expenseTrends, isLoading: trendsLoading } = useExpenseTrends(selectedCurrency);
   const { data: activity, isLoading: activityLoading } = useRecentActivity();
   const { data: engagement, isLoading: engagementLoading } = useUserEngagement();
   const { data: retention, isLoading: retentionLoading } = useUserRetention();
-  const { data: platformActivity, isLoading: platformLoading } = usePlatformActivity();
   const { data: supportMetrics, isLoading: supportLoading } = useSupportMetrics();
 
   return (
@@ -83,9 +100,10 @@ export function AdminDashboardView() {
           }
         />
         <StatCard
-          title="Total Volume"
-          value={stats ? formatCurrency(stats.totalVolume) : undefined}
-          loading={statsLoading}
+          title="Top Currency"
+          value={platformActivity?.currencies[0] ? formatCurrency(platformActivity.currencies[0].total, platformActivity.currencies[0].currency) : undefined}
+          loading={platformLoading}
+          subtitle={platformActivity?.currencies[0] ? `${platformActivity.currencies[0].currency} (${platformActivity.currencies[0].count} txns)` : undefined}
           icon={
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" x2="12" y1="2" y2="22" />
@@ -161,10 +179,26 @@ export function AdminDashboardView() {
         {/* Expense Trends Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-foreground">Expense Volume</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Daily expense totals over the last 30 days
-            </p>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-foreground">Expense Volume</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Daily expense totals over the last 30 days
+                </p>
+              </div>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {platformActivity?.currencies.map((curr) => (
+                    <SelectItem key={curr.currency} value={curr.currency}>
+                      {curr.currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             {trendsLoading ? (
@@ -192,7 +226,7 @@ export function AdminDashboardView() {
                       tickLine={false}
                       tick={{ className: "fill-muted-foreground", fontSize: 12 }}
                       width={60}
-                      tickFormatter={(value) => formatCurrency(value)}
+                      tickFormatter={(value) => formatCurrency(value, selectedCurrency)}
                     />
                     <Tooltip
                       contentStyle={{
@@ -203,7 +237,7 @@ export function AdminDashboardView() {
                       }}
                       itemStyle={{ color: "hsl(var(--foreground))" }}
                       labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                      formatter={(value: number | undefined) => [formatCurrency(value ?? 0), "Volume"]}
+                      formatter={(value: number | undefined) => [formatCurrency(value ?? 0, selectedCurrency), "Volume"]}
                     />
                     <Area
                       type="monotone"

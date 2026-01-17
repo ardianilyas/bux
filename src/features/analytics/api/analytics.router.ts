@@ -2,6 +2,7 @@ import { createTRPCRouter, adminProcedure } from "@/trpc/init";
 import { db } from "@/db";
 import { users, expenses, tickets, categories, subscriptions, ticketMessages } from "@/db/schema";
 import { sql, desc, gte, and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 export const analyticsRouter = createTRPCRouter({
   /**
@@ -24,11 +25,6 @@ export const analyticsRouter = createTRPCRouter({
       .select({ count: sql<number>`count(*)::int` })
       .from(expenses);
 
-    // Get total expense volume
-    const [expenseVolume] = await db
-      .select({ total: sql<number>`coalesce(sum(amount), 0)::numeric` })
-      .from(expenses);
-
     // Get open tickets count
     const [openTicketCount] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -39,7 +35,6 @@ export const analyticsRouter = createTRPCRouter({
       totalUsers: userCount?.count ?? 0,
       activeUsers: activeUserCount?.count ?? 0,
       totalExpenses: expenseCount?.count ?? 0,
-      totalVolume: Number(expenseVolume?.total ?? 0),
       openTickets: openTicketCount?.count ?? 0,
     };
   }),
@@ -82,7 +77,9 @@ export const analyticsRouter = createTRPCRouter({
   /**
    * Get expense trends for the last 30 days
    */
-  getExpenseTrends: adminProcedure.query(async () => {
+  getExpenseTrends: adminProcedure.input(z.object({
+    currency: z.string().optional(),
+  }).optional()).query(async ({ input }) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -93,7 +90,11 @@ export const analyticsRouter = createTRPCRouter({
         total: sql<number>`coalesce(sum(amount), 0)::numeric`,
       })
       .from(expenses)
-      .where(gte(expenses.date, thirtyDaysAgo))
+      .where(
+        input?.currency
+          ? and(gte(expenses.date, thirtyDaysAgo), eq(expenses.currency, input.currency))
+          : gte(expenses.date, thirtyDaysAgo)
+      )
       .groupBy(sql`date_trunc('day', ${expenses.date})`)
       .orderBy(sql`date_trunc('day', ${expenses.date})`);
 

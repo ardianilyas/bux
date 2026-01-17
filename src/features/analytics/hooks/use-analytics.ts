@@ -10,8 +10,8 @@ export function useUserGrowth() {
   return trpc.analytics.getUserGrowth.useQuery();
 }
 
-export function useExpenseTrends() {
-  return trpc.analytics.getExpenseTrends.useQuery();
+export function useExpenseTrends(currency?: string) {
+  return trpc.analytics.getExpenseTrends.useQuery(currency ? { currency } : undefined);
 }
 
 export function useRecentActivity() {
