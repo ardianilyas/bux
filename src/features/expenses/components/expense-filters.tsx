@@ -133,8 +133,8 @@ export function ExpenseFiltersCard({
         )}
 
         {/* Desktop: Full Filters */}
-        <div className="hidden md:grid gap-4 md:grid-cols-4">
-          <div className="relative">
+        <div className="hidden md:flex gap-3 items-center">
+          <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search expenses..."
@@ -151,7 +151,7 @@ export function ExpenseFiltersCard({
               onFiltersChange({ ...filters, categoryId: value })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -170,7 +170,7 @@ export function ExpenseFiltersCard({
             </SelectContent>
           </Select>
           <DatePickerWithRange
-            className="col-span-2"
+            className="w-auto"
             date={{
               from: filters.startDate ? new Date(filters.startDate) : undefined,
               to: filters.endDate ? new Date(filters.endDate) : undefined,
@@ -188,3 +188,4 @@ export function ExpenseFiltersCard({
     </Card>
   );
 }
+

@@ -73,15 +73,21 @@ export const expenseRouter = createTRPCRouter({
     const filters = [eq(expenses.userId, ctx.session.user.id)];
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    endOfLastMonth.setHours(23, 59, 59, 999);
 
-    const [totalResult] = await db
+    // Last 6 months total
+    const [sixMonthResult] = await db
       .select({
         total: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
         count: sql<number>`count(*)::int`,
       })
       .from(expenses)
-      .where(and(...filters));
+      .where(and(...filters, gte(expenses.date, sixMonthsAgo)));
 
+    // This month
     const [thisMonthResult] = await db
       .select({
         total: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
@@ -89,10 +95,34 @@ export const expenseRouter = createTRPCRouter({
       .from(expenses)
       .where(and(...filters, gte(expenses.date, startOfMonth)));
 
+    // Last month (for comparison)
+    const [lastMonthResult] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${expenses.amount} * ${expenses.exchangeRate}), 0)::int`,
+      })
+      .from(expenses)
+      .where(and(
+        ...filters,
+        gte(expenses.date, startOfLastMonth),
+        lte(expenses.date, endOfLastMonth)
+      ));
+
+    // Calculate average per transaction (more meaningful than daily average)
+    const transactionCount = sixMonthResult?.count ?? 0;
+    const avgPerTransaction = transactionCount > 0 ? Math.round((sixMonthResult?.total ?? 0) / transactionCount) : 0;
+
+    // Days info for prediction
+    const currentDay = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
     return {
-      total: totalResult?.total ?? 0,
-      count: totalResult?.count ?? 0,
+      total: sixMonthResult?.total ?? 0,
+      count: sixMonthResult?.count ?? 0,
       thisMonth: thisMonthResult?.total ?? 0,
+      lastMonth: lastMonthResult?.total ?? 0,
+      avgPerTransaction,
+      currentDay,
+      daysInMonth,
     };
   }),
 

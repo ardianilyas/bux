@@ -41,12 +41,22 @@ export function DashboardView() {
 
   const totalExpenses = stats?.total || 0;
   const thisMonthExpenses = stats?.thisMonth || 0;
+  const lastMonthExpenses = stats?.lastMonth || 0;
+  const avgPerTransaction = stats?.avgPerTransaction || 0;
+  const currentDay = stats?.currentDay || new Date().getDate();
+  const daysInMonth = stats?.daysInMonth || 30;
   const recentExpenses = expenses?.data || [];
 
-  // Budget spending is now calculated on the backend and included in the response.
+  // Insights calculations
+  const monthlyChange = lastMonthExpenses > 0
+    ? Math.round(((thisMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100)
+    : 0;
 
-  // Wait, I should add categoryId to getBreakdown response to make this work.
-  // Let's assume I will add it in next step.
+  const dailyRateThisMonth = currentDay > 0 ? thisMonthExpenses / currentDay : 0;
+  const predictedMonthEnd = Math.round(dailyRateThisMonth * daysInMonth);
+
+  // Top spending category this month
+  const topCategory = breakdown && breakdown.length > 0 ? breakdown[0] : null;
 
   const isLoading = expensesLoading || statsLoading || trendsLoading || breakdownLoading;
 
@@ -116,7 +126,7 @@ export function DashboardView() {
             <div className="text-2xl font-bold text-foreground">
               {formatCurrency(totalExpenses, userBaseCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <p className="text-xs text-muted-foreground">Last 6 months</p>
           </CardContent>
         </Card>
 
@@ -203,6 +213,95 @@ export function DashboardView() {
         </Card>
       </div>
 
+      {/* Insights */}
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        {/* Monthly Comparison - Uses dynamic color based on +/- */}
+        <Card className={`overflow-hidden border ${monthlyChange >= 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${monthlyChange >= 0 ? 'bg-red-100 dark:bg-red-900/50' : 'bg-emerald-100 dark:bg-emerald-900/50'}`}>
+                {monthlyChange >= 0 ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400">
+                    <path d="m5 12 7-7 7 7" /><path d="M12 19V5" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
+                    <path d="m5 12 7 7 7-7" /><path d="M12 5v14" />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">vs Last Month</p>
+                <p className={`text-lg font-bold ${monthlyChange >= 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  {monthlyChange >= 0 ? '+' : ''}{monthlyChange}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Avg per Transaction - Amber/Orange Pastel */}
+        <Card className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900/50 overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 dark:text-amber-400">
+                  <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+                  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                  <path d="M12 17.5v-11" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Avg/Transaction</p>
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                  {formatCurrency(avgPerTransaction, userBaseCurrency)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Category - Purple/Violet Pastel */}
+        <Card className="bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:border-violet-900/50 overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-violet-600 dark:text-violet-400">
+                  <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+                  <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Top Category</p>
+                <p className="text-lg font-bold text-violet-700 dark:text-violet-300 truncate">
+                  {topCategory?.name || 'None'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Predicted Month End - Cyan/Sky Pastel */}
+        <Card className="bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-900/50 overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-sky-100 dark:bg-sky-900/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sky-600 dark:text-sky-400">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Predicted Total</p>
+                <p className="text-lg font-bold text-sky-700 dark:text-sky-300">
+                  {formatCurrency(predictedMonthEnd, userBaseCurrency)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <SpendingTrendsChart data={trends || []} userBaseCurrency={userBaseCurrency} />
@@ -212,7 +311,7 @@ export function DashboardView() {
       {/* Budget Overview */}
       {budgets && budgets.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-foreground">Budget Overview</CardTitle>
             <Link
               href="/dashboard/budgets"
@@ -222,41 +321,66 @@ export function DashboardView() {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {budgets.slice(0, 3).map((budget) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {budgets.slice(0, 6).map((budget) => {
                 // @ts-ignore - spent is added by backend aggregation
                 const spent = budget.spent || 0;
                 const percent = Math.min((spent / budget.amount) * 100, 100);
                 const overBudget = spent > budget.amount;
+                const remaining = Math.max(budget.amount - spent, 0);
 
                 return (
-                  <div key={budget.id} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: budget.category.color }}
+                  <div
+                    key={budget.id}
+                    className="flex flex-col items-center p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    {/* Circular Progress */}
+                    <div className="relative w-16 h-16 mb-2">
+                      <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="6"
+                          className="text-muted"
                         />
-                        <span className="text-foreground font-medium">
-                          {budget.category.name}
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                          className={overBudget ? "text-red-500" : percent >= 80 ? "text-amber-500" : "text-green-500"}
+                          style={{
+                            strokeDasharray: `${2 * Math.PI * 28}`,
+                            strokeDashoffset: `${2 * Math.PI * 28 * (1 - percent / 100)}`,
+                          }}
+                          stroke="currentColor"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className={`text-xs font-semibold ${overBudget ? "text-red-500" : ""}`}>
+                          {Math.round(percent)}%
                         </span>
                       </div>
-                      <span
-                        className={
-                          overBudget
-                            ? "text-red-500 font-medium"
-                            : "text-muted-foreground"
-                        }
-                      >
-                        {formatCurrency(spent, userBaseCurrency)} / {formatCurrency(budget.amount, userBaseCurrency)}
+                    </div>
+                    {/* Category */}
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: budget.category.color }}
+                      />
+                      <span className="text-sm font-medium text-foreground truncate max-w-[80px]">
+                        {budget.category.name}
                       </span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${getProgressColor(percent)}`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
+                    {/* Amounts */}
+                    <p className="text-xs text-muted-foreground text-center">
+                      {formatCurrency(remaining, userBaseCurrency)} left
+                    </p>
                   </div>
                 );
               })}
