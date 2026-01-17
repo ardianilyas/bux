@@ -1,4 +1,6 @@
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   subscriptionListInputSchema,
   createSubscriptionSchema,
@@ -187,4 +189,62 @@ export const subscriptionRouter = createTRPCRouter({
       })),
     };
   }),
+
+  // Record a payment manually (e.g. for upcoming bills)
+  recordPayment: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      date: z.date(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [sub] = await db.select().from(subscriptions).where(
+        and(
+          eq(subscriptions.id, input.id),
+          eq(subscriptions.userId, ctx.session.user.id)
+        )
+      );
+
+      if (!sub) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Subscription not found" });
+      }
+
+      // Calculate next date
+      const nextDate = new Date(sub.nextBillingDate);
+      switch (sub.billingCycle) {
+        case "weekly": nextDate.setDate(nextDate.getDate() + 7); break;
+        case "monthly": nextDate.setMonth(nextDate.getMonth() + 1); break;
+        case "yearly": nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+      }
+
+      await db.transaction(async (tx) => {
+        // Create expense
+        await tx.insert(expenses).values({
+          amount: sub.amount,
+          description: `Subscription: ${sub.name}`,
+          date: input.date,
+          categoryId: sub.categoryId,
+          userId: ctx.session.user.id,
+          subscriptionId: sub.id,
+        });
+
+        // Update sub
+        await tx.update(subscriptions)
+          .set({ nextBillingDate: nextDate, updatedAt: new Date() })
+          .where(eq(subscriptions.id, sub.id));
+      });
+
+      // Audit
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.SUBSCRIPTION.PROCESS,
+        targetId: sub.id,
+        targetType: "subscription",
+        metadata: { manual: true, amount: sub.amount },
+        ipAddress,
+        userAgent,
+      });
+
+      return { success: true };
+    }),
 });

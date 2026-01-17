@@ -24,15 +24,15 @@ interface SpendingTrendsChartProps {
 export function SpendingTrendsChart({ data, userBaseCurrency }: SpendingTrendsChartProps) {
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-foreground">Spending Trends</CardTitle>
         <p className="text-sm text-muted-foreground">
           Your spending over the last 6 months
         </p>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
+      <CardContent className="flex-1">
+        <div className="h-full w-full min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}

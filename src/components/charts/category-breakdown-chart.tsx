@@ -52,14 +52,14 @@ export function CategoryBreakdownChart({ data, userBaseCurrency }: CategoryBreak
 
   if (data.length === 0) {
     return (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-foreground">Category Breakdown</CardTitle>
           <p className="text-sm text-muted-foreground">
             Spending distribution by category
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <div className="h-[300px] flex items-center justify-center">
             <p className="text-muted-foreground">No expense data yet</p>
           </div>
@@ -69,15 +69,15 @@ export function CategoryBreakdownChart({ data, userBaseCurrency }: CategoryBreak
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-foreground">Category Breakdown</CardTitle>
         <p className="text-sm text-muted-foreground">
           Spending distribution by category this month
         </p>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
+      <CardContent className="flex-1 min-h-[300px]">
+        <div className="h-full w-full min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

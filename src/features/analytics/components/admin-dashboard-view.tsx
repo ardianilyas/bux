@@ -101,7 +101,7 @@ export function AdminDashboardView() {
         />
         <StatCard
           title="Top Currency"
-          value={platformActivity?.currencies[0] ? formatCurrency(platformActivity.currencies[0].total, platformActivity.currencies[0].currency) : undefined}
+          value={platformActivity?.currencies[0] ? formatCurrency(platformActivity.currencies[0].total, platformActivity.currencies[0].currency, true) : undefined}
           loading={platformLoading}
           subtitle={platformActivity?.currencies[0] ? `${platformActivity.currencies[0].currency} (${platformActivity.currencies[0].count} txns)` : undefined}
           icon={

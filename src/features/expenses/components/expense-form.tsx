@@ -33,6 +33,7 @@ type ExpenseFormData = {
   categoryId: string;
   currency: string;
   exchangeRate: string;
+  merchant?: string;
 };
 
 type ExpenseFormProps = {
@@ -122,6 +123,7 @@ export function ExpenseForm({
         amount: formData.amount,
         date: formData.date,
         categoryId: formData.categoryId || undefined,
+        merchant: formData.merchant || undefined,
       });
       setErrors({});
       onSubmit();
@@ -154,6 +156,16 @@ export function ExpenseForm({
           autoFocus
         />
         <InputError message={errors.description} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="merchant">Merchant (Optional)</Label>
+        <Input
+          id="merchant"
+          value={formData.merchant || ""}
+          onChange={(e) => setFormData({ ...formData, merchant: e.target.value })}
+          placeholder="e.g. Starbucks, Uber, Amazon"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

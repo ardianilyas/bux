@@ -29,6 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SearchCommand } from "@/components/search-command";
 import { toast } from "sonner";
 
 const menuItems = [
@@ -263,6 +264,26 @@ const menuItems = [
     ),
   },
   {
+    title: "Insights",
+    url: "/dashboard/insights",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+      </svg>
+    ),
+  },
+  {
     title: "Analytics",
     url: "/dashboard/admin",
     icon: (
@@ -336,6 +357,7 @@ const userMenuItems = [
   menuItems.find(m => m.title === "Calendar")!,
   menuItems.find(m => m.title === "Budgets")!,
   menuItems.find(m => m.title === "Subscriptions")!,
+  menuItems.find(m => m.title === "Insights")!,
   menuItems.find(m => m.title === "Savings Goals")!,
   menuItems.find(m => m.title === "Support")!,
   menuItems.find(m => m.title === "Settings")!,
@@ -514,7 +536,10 @@ export default function DashboardLayout({
               <Separator orientation="vertical" className="h-6" />
               <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <SearchCommand />
+              <ThemeToggle />
+            </div>
           </header>
           <div className="p-6">{children}</div>
         </main>

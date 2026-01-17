@@ -353,6 +353,61 @@ export const expenseRouter = createTRPCRouter({
       };
     }),
 
+  getMerchantStats: protectedProcedure.query(async ({ ctx }) => {
+    // Get stats for all time
+    const expensesData = await db
+      .select({
+        merchant: expenses.merchant,
+        amount: expenses.amount,
+        exchangeRate: expenses.exchangeRate,
+        currency: expenses.currency,
+      })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, ctx.session.user.id),
+          sql`${expenses.merchant} IS NOT NULL`
+        )
+      );
+
+    const merchantStats: Record<string, { total: number; count: number }> = {};
+
+    expensesData.forEach((expense) => {
+      if (!expense.merchant) return;
+
+      const merchant = expense.merchant;
+      const convertedAmount = expense.amount * expense.exchangeRate;
+
+      if (!merchantStats[merchant]) {
+        merchantStats[merchant] = { total: 0, count: 0 };
+      }
+
+      merchantStats[merchant].total += convertedAmount;
+      merchantStats[merchant].count += 1;
+    });
+
+    // Convert to array and sort
+    const topMerchantsBySpend = Object.entries(merchantStats)
+      .map(([name, stats]) => ({
+        name,
+        total: Math.round(stats.total),
+        count: stats.count,
+        avgSpend: Math.round(stats.total / stats.count),
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    const topMerchantsByCount = [...topMerchantsBySpend]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    return {
+      bySpend: topMerchantsBySpend,
+      byCount: topMerchantsByCount,
+      totalMerchants: Object.keys(merchantStats).length,
+    };
+  }),
+
   delete: protectedProcedure
     .input(deleteExpenseSchema)
     .mutation(async ({ ctx, input }) => {
