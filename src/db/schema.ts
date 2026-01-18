@@ -308,6 +308,27 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+// ==================== Feature Toggles ====================
+
+export const featureToggles = pgTable("feature_toggles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  featureKey: text("feature_key").notNull().unique(),
+  enabled: boolean("enabled").notNull().default(true),
+  displayName: text("display_name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull().default("toggle-left"),
+  updatedBy: text("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const featureTogglesRelations = relations(featureToggles, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [featureToggles.updatedBy],
+    references: [users.id],
+  }),
+}));
+
 // Type exports for use in application
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -331,4 +352,7 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type SavingsGoal = typeof savingsGoals.$inferSelect;
 export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
+export type FeatureToggle = typeof featureToggles.$inferSelect;
+export type NewFeatureToggle = typeof featureToggles.$inferInsert;
+
 

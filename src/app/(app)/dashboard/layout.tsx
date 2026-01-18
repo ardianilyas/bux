@@ -4,6 +4,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useUserStore } from "@/store/use-user-store";
+import { trpc } from "@/trpc/client";
+import { FEATURE_KEYS } from "@/lib/feature-constants";
 import {
   Sidebar,
   SidebarContent,
@@ -98,6 +100,7 @@ const menuItems = [
   {
     title: "Budgets",
     url: "/dashboard/budgets",
+    featureKey: "budgets",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -119,6 +122,7 @@ const menuItems = [
   {
     title: "Subscriptions",
     url: "/dashboard/subscriptions",
+    featureKey: "subscriptions",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -140,6 +144,7 @@ const menuItems = [
   {
     title: "Savings Goals",
     url: "/dashboard/savings",
+    featureKey: "savings",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -266,6 +271,7 @@ const menuItems = [
   {
     title: "Insights",
     url: "/dashboard/insights",
+    featureKey: "insights",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -328,8 +334,30 @@ const menuItems = [
     ),
   },
   {
+    title: "Feature Management",
+    url: "/dashboard/admin/features",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect width="18" height="14" x="3" y="5" rx="2" />
+        <path d="M9 9h0" />
+        <path d="M15 9h0" />
+      </svg>
+    ),
+  },
+  {
     title: "Calendar",
     url: "/dashboard/calendar",
+    featureKey: "calendar",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -370,6 +398,7 @@ const adminMenuItems = [
   menuItems.find(m => m.title === "Announcements")!,
   menuItems.find(m => m.title === "Tickets")!,
   menuItems.find(m => m.title === "Audit Logs")!,
+  menuItems.find(m => m.title === "Feature Management")!,
 ];
 
 export default function DashboardLayout({
@@ -403,6 +432,19 @@ export default function DashboardLayout({
     .join("")
     .toUpperCase() || "U";
 
+  const { data: enabledFeatures } = trpc.featureToggle.getEnabledFeatures.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const filteredMenuItems = userMenuItems.filter((item) => {
+    if (!item.featureKey) return true;
+    if (isAdmin) return true;
+    // If data is not yet loaded, we hide to avoid showing disabled content
+    // Or we could default to true if we prefer optimistic UI
+    return enabledFeatures?.[item.featureKey];
+  });
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -422,7 +464,7 @@ export default function DashboardLayout({
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {userMenuItems.map((item) => {
+                  {filteredMenuItems.map((item) => {
                     const isActive = pathname === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
@@ -501,8 +543,8 @@ export default function DashboardLayout({
                       {userInitials}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-sm font-medium text-foreground">
+                  <div className="flex flex-col items-start text-left overflow-hidden">
+                    <span className="text-sm font-medium text-foreground truncate max-w-[150px]">
                       {displayName}
                     </span>
                     <span className="text-xs text-muted-foreground truncate max-w-[150px]">

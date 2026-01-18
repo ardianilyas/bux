@@ -29,7 +29,9 @@ export type AuditAction =
   | "savings_goal.create"
   | "savings_goal.update"
   | "savings_goal.delete"
-  | "savings_goal.add_funds";
+  | "savings_goal.add_funds"
+  | "feature.enable"
+  | "feature.disable";
 
 // Action constants to avoid magic strings
 export const AUDIT_ACTIONS = {
@@ -79,5 +81,12 @@ export const AUDIT_ACTIONS = {
     UPDATE: "savings_goal.update" as const,
     DELETE: "savings_goal.delete" as const,
     ADD_FUNDS: "savings_goal.add_funds" as const,
+    CONTRIBUTE: "savings_goal.contribute" as const, // Added based on the user's snippet
+  },
+
+  // Feature Toggle actions
+  FEATURE: {
+    ENABLE: "feature.enable" as const,
+    DISABLE: "feature.disable" as const,
   },
 } as const;
