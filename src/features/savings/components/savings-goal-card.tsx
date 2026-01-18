@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SavingsGoal } from "../types";
 import { getProgressColor } from "../types";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Trophy, MoreVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Trophy, MoreVertical, Pin, PinOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ type SavingsGoalCardProps = {
   onEdit: (goal: SavingsGoal) => void;
   onDelete: (id: string) => void;
   onAddFunds: (goal: SavingsGoal) => void;
+  onTogglePin: (goal: SavingsGoal) => void;
   isDeleting: boolean;
   userBaseCurrency: string;
 };
@@ -28,6 +29,7 @@ export function SavingsGoalCard({
   onEdit,
   onDelete,
   onAddFunds,
+  onTogglePin,
   isDeleting,
   userBaseCurrency,
 }: SavingsGoalCardProps) {
@@ -61,9 +63,16 @@ export function SavingsGoalCard({
   return (
     <Card className="hover:border-primary/50 transition-all hover:shadow-md relative overflow-hidden">
       {isComplete && (
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 z-10">
           <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full p-2">
             <Trophy className="h-4 w-4" />
+          </div>
+        </div>
+      )}
+      {goal.isPinned && (
+        <div className={`absolute top-2 ${isComplete ? 'right-12' : 'right-2'} z-10`}>
+          <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full p-2">
+            <Pin className="h-4 w-4" />
           </div>
         </div>
       )}
@@ -153,6 +162,20 @@ export function SavingsGoalCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onTogglePin(goal)}>
+                {goal.isPinned ? (
+                  <>
+                    <PinOff className="mr-2 h-4 w-4" />
+                    Unpin from Dashboard
+                  </>
+                ) : (
+                  <>
+                    <Pin className="mr-2 h-4 w-4" />
+                    Pin to Dashboard
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onEdit(goal)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit Goal
@@ -170,6 +193,6 @@ export function SavingsGoalCard({
           </DropdownMenu>
         </div>
       </CardContent>
-    </Card>
+    </Card >
   );
 }

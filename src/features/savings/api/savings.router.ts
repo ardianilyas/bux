@@ -195,4 +195,49 @@ export const savingsRouter = createTRPCRouter({
 
       return goal;
     }),
+
+  togglePin: protectedProcedure
+    .input(deleteSavingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const currentGoal = await db.query.savingsGoals.findFirst({
+        where: and(
+          eq(savingsGoals.id, input.id),
+          eq(savingsGoals.userId, ctx.session.user.id)
+        ),
+      });
+
+      if (!currentGoal) {
+        throw new Error("Savings goal not found");
+      }
+
+      const newPinnedStatus = !currentGoal.isPinned;
+
+      const [goal] = await db
+        .update(savingsGoals)
+        .set({
+          isPinned: newPinnedStatus,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(savingsGoals.id, input.id),
+            eq(savingsGoals.userId, ctx.session.user.id)
+          )
+        )
+        .returning();
+
+      // Log audit event (optional, but good for tracking)
+      const { ipAddress, userAgent } = await getRequestMetadata();
+      await logAudit({
+        userId: ctx.session.user.id,
+        action: AUDIT_ACTIONS.SAVINGS_GOAL.UPDATE, // Reusing UPDATE as we don't have a specific PIN action yet
+        targetId: input.id,
+        targetType: "savings_goal",
+        metadata: { isPinned: newPinnedStatus },
+        ipAddress,
+        userAgent,
+      });
+
+      return goal;
+    }),
 });

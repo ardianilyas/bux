@@ -11,6 +11,8 @@ import { calculateTotalInBaseCurrency } from "@/lib/currency-conversion";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { UpcomingBillsCard } from "@/features/subscriptions/components/upcoming-bills-card";
+import { PinnedGoalsSection } from "@/features/savings/components/pinned-goals-section";
+import { PrivacySensitive } from "@/components/privacy-sensitive";
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -101,6 +103,7 @@ export function DashboardView() {
   return (
     <div className="space-y-6">
       <AnnouncementBanner />
+      <PinnedGoalsSection />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -112,7 +115,9 @@ export function DashboardView() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{formatCurrency(totalExpenses, userBaseCurrency)}</div>
+            <PrivacySensitive className="text-2xl font-bold text-foreground">
+              {formatCurrency(totalExpenses, userBaseCurrency)}
+            </PrivacySensitive>
             <p className="text-xs text-muted-foreground">Last 6 months</p>
           </CardContent>
         </Card>
@@ -128,7 +133,9 @@ export function DashboardView() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{formatCurrency(thisMonthExpenses, userBaseCurrency)}</div>
+            <PrivacySensitive className="text-2xl font-bold text-foreground">
+              {formatCurrency(thisMonthExpenses, userBaseCurrency)}
+            </PrivacySensitive>
             <p className="text-xs text-muted-foreground">Current month</p>
           </CardContent>
         </Card>
@@ -197,7 +204,9 @@ export function DashboardView() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Avg/Transaction</p>
-                <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{formatCurrency(avgPerTransaction, userBaseCurrency)}</p>
+                <PrivacySensitive className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                  {formatCurrency(avgPerTransaction, userBaseCurrency)}
+                </PrivacySensitive>
               </div>
             </div>
           </CardContent>
@@ -231,7 +240,9 @@ export function DashboardView() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Predicted Total</p>
-                <p className="text-lg font-bold text-sky-700 dark:text-sky-300">{formatCurrency(predictedMonthEnd, userBaseCurrency)}</p>
+                <PrivacySensitive className="text-lg font-bold text-sky-700 dark:text-sky-300">
+                  {formatCurrency(predictedMonthEnd, userBaseCurrency)}
+                </PrivacySensitive>
               </div>
             </div>
           </CardContent>
@@ -272,7 +283,9 @@ export function DashboardView() {
                             <p className="text-xs text-muted-foreground">{formatDate(expense.date)}</p>
                           </div>
                         </div>
-                        <p className="text-sm font-semibold">-{formatCurrency(convertedAmount, userBaseCurrency)}</p>
+                        <PrivacySensitive className="text-sm font-semibold">
+                          -{formatCurrency(convertedAmount, userBaseCurrency)}
+                        </PrivacySensitive>
                       </div>
                     );
                   })}

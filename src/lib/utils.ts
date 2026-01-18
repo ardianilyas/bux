@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number, currency: string = "IDR", compact: boolean = false) {
+export function formatCurrency(amount: number, currency: string = "IDR", compact: boolean = true) {
   // Ensure currency is valid string, fallback to IDR if invalid/empty/non-string
   const validCurrency = (typeof currency === "string" && currency ? currency : "IDR").toUpperCase();
 
@@ -14,9 +14,12 @@ export function formatCurrency(amount: number, currency: string = "IDR", compact
   const fractionDigits = noDecimalCurrencies.includes(validCurrency) ? 0 : 2;
 
   try {
-    return new Intl.NumberFormat(getLocaleForCurrency(validCurrency), {
+    const locale = compact ? "en-US" : getLocaleForCurrency(validCurrency);
+
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: validCurrency,
+      currencyDisplay: "narrowSymbol",
       minimumFractionDigits: compact ? 0 : fractionDigits,
       maximumFractionDigits: compact ? 1 : fractionDigits,
       notation: compact ? "compact" : "standard",

@@ -6,6 +6,7 @@ export type SavingsGoal = {
   currency: string;
   color: string;
   targetDate: Date | null;
+  isPinned: boolean;
   userId: string;
   createdAt: Date;
   updatedAt: Date;

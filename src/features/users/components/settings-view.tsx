@@ -19,9 +19,12 @@ import { CURRENCIES } from "@/lib/currency";
 import { trpc } from "@/trpc/client";
 import { useSession } from "@/features/auth/hooks/use-auth";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { usePrivacyStore } from "@/store/use-privacy-store";
 
 export function SettingsView() {
   const { data: session, refetch: refetchSession } = useSession();
+  const { isPrivacyMode, togglePrivacyMode } = usePrivacyStore();
   const utils = trpc.useUtils();
 
   const updateCurrency = trpc.user.updateCurrency.useMutation({
@@ -124,6 +127,30 @@ export function SettingsView() {
               This currency will be used to display all amounts in reports and dashboards.
               New expenses can still be recorded in any currency with real-time conversion.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Privacy</CardTitle>
+          <CardDescription>
+            Manage privacy settings for your dashboard
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="privacy-mode">Privacy Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Hides sensitive financial amounts throughout the application
+              </p>
+            </div>
+            <Switch
+              id="privacy-mode"
+              checked={isPrivacyMode}
+              onCheckedChange={togglePrivacyMode}
+            />
           </div>
         </CardContent>
       </Card>

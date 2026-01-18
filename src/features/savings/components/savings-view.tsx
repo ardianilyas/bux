@@ -23,6 +23,7 @@ import {
   useUpdateSavingsGoal,
   useDeleteSavingsGoal,
   useAddFunds,
+  useTogglePinSavingsGoal,
 } from "../hooks/use-savings";
 import type { SavingsGoal, SavingsGoalFormData } from "../types";
 import { useSession } from "@/features/auth/hooks/use-auth";
@@ -38,6 +39,7 @@ export function SavingsView() {
   const updateMutation = useUpdateSavingsGoal();
   const deleteMutation = useDeleteSavingsGoal();
   const addFundsMutation = useAddFunds();
+  const togglePinMutation = useTogglePinSavingsGoal();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
@@ -118,6 +120,21 @@ export function SavingsView() {
         },
         onError: (error) => {
           toast.error(error.message || "Failed to add funds");
+        },
+      }
+    );
+  };
+
+  const handleTogglePin = (goal: SavingsGoal) => {
+    togglePinMutation.mutate(
+      { id: goal.id },
+      {
+        onSuccess: () => {
+          const action = goal.isPinned ? "unpinned from" : "pinned to";
+          toast.success(`${goal.name} ${action} dashboard!`);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to update pin status");
         },
       }
     );
@@ -207,6 +224,7 @@ export function SavingsView() {
               onEdit={setEditingGoal}
               onDelete={setDeletingId}
               onAddFunds={setAddingGoal}
+              onTogglePin={handleTogglePin}
               isDeleting={deleteMutation.isPending}
               userBaseCurrency={userBaseCurrency}
             />

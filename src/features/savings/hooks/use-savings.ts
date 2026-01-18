@@ -69,3 +69,13 @@ export function useAddFunds() {
     },
   });
 }
+
+export function useTogglePinSavingsGoal() {
+  const utils = trpc.useUtils();
+
+  return trpc.savings.togglePin.useMutation({
+    onSuccess: () => {
+      utils.savings.list.invalidate();
+    },
+  });
+}

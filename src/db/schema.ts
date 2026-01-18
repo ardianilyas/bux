@@ -195,6 +195,7 @@ export const savingsGoals = pgTable("savings_goals", {
   currency: text("currency").notNull().default("IDR"),
   color: text("color").notNull().default("#6366f1"),
   targetDate: timestamp("target_date"),
+  isPinned: boolean("is_pinned").notNull().default(false),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
