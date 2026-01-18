@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/utils";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
+import Link from "next/link";
 
 export function UpcomingBillsCard() {
   const utils = trpc.useUtils();
@@ -54,21 +55,24 @@ export function UpcomingBillsCard() {
   const hasBills = upcoming && upcoming.length > 0;
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Card className="flex flex-col h-full border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-900/10 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950/30">
+            <CalendarClock className="h-4 w-4 text-orange-500" />
+          </div>
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarClock className="h-5 w-5 text-muted-foreground" />
-              Upcoming Bills
-            </CardTitle>
-            <CardDescription>
+            <CardTitle className="text-base font-semibold">Upcoming Bills</CardTitle>
+            <p className="text-xs text-muted-foreground">
               {hasBills
-                ? `${upcoming.length} payment${upcoming.length > 1 ? 's' : ''} due in the next 7 days`
+                ? `${upcoming.length} payment${upcoming.length > 1 ? 's' : ''} due soon`
                 : "No bills due this week"}
-            </CardDescription>
+            </p>
           </div>
         </div>
+        <Link href="/dashboard/subscriptions" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+          Manage
+        </Link>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
         {hasBills ? (

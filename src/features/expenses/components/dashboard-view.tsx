@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { UpcomingBillsCard } from "@/features/subscriptions/components/upcoming-bills-card";
 import { PinnedGoalsSection } from "@/features/savings/components/pinned-goals-section";
 import { PrivacySensitive } from "@/components/privacy-sensitive";
+import { DashboardBudgetOverview } from "@/features/budgets/components/dashboard-budget-overview";
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -261,9 +262,33 @@ export function DashboardView() {
 
         {/* Row 2: Recent (2) + Category (4) */}
         <div className="lg:col-span-2 h-[400px]">
-          <Card className="h-full flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-foreground">Recent Expenses</CardTitle>
+          <Card className="h-full flex flex-col border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-900/10 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-blue-500"
+                  >
+                    <path d="M12 20v-6M6 20V10M18 20V4" />
+                  </svg>
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+                  <p className="text-xs text-muted-foreground">Latest transactions</p>
+                </div>
+              </div>
+              <Link href="/dashboard/expenses" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+                View all
+              </Link>
             </CardHeader>
             <CardContent className="flex-1 overflow-auto">
               {recentExpenses.length === 0 ? (
@@ -300,35 +325,7 @@ export function DashboardView() {
       </div>
 
       {/* Budget Overview */}
-      {budgets.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-foreground text-lg font-semibold">Budget Overview</CardTitle>
-            <Link href="/dashboard/budgets" className="text-sm text-primary hover:underline">View all →</Link>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {budgets.slice(0, 6).map((budget) => {
-                // @ts-ignore
-                const spent = budget.spent || 0;
-                const percent = Math.min((spent / budget.amount) * 100, 100);
-                return (
-                  <div key={budget.id} className="flex flex-col items-center">
-                    <div className="relative w-12 h-12 mb-2">
-                      <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 64 64">
-                        <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted" />
-                        <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" className={percent >= 100 ? "text-red-500" : percent >= 80 ? "text-amber-500" : "text-green-500"} style={{ strokeDasharray: 176, strokeDashoffset: 176 * (1 - percent / 100) }} />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">{Math.round(percent)}%</div>
-                    </div>
-                    <span className="text-xs font-medium truncate w-full text-center">{budget.category.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <DashboardBudgetOverview budgets={budgets as any} userBaseCurrency={userBaseCurrency} />
     </div>
   );
 }

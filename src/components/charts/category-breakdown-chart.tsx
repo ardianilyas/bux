@@ -52,12 +52,31 @@ export function CategoryBreakdownChart({ data, userBaseCurrency }: CategoryBreak
 
   if (data.length === 0) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="text-foreground">Category Breakdown</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Spending distribution by category
-          </p>
+      <Card className="h-full flex flex-col border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-900/10 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-emerald-500"
+              >
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                <path d="M22 12A10 10 0 0 0 12 2v10z" />
+              </svg>
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">Category Breakdown</CardTitle>
+              <p className="text-xs text-muted-foreground">Distribution by category</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1">
           <div className="h-[300px] flex items-center justify-center">
@@ -69,12 +88,31 @@ export function CategoryBreakdownChart({ data, userBaseCurrency }: CategoryBreak
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-foreground">Category Breakdown</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Spending distribution by category this month
-        </p>
+    <Card className="h-full flex flex-col border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-900/10 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-emerald-500"
+            >
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+              <path d="M22 12A10 10 0 0 0 12 2v10z" />
+            </svg>
+          </div>
+          <div>
+            <CardTitle className="text-base font-semibold">Category Breakdown</CardTitle>
+            <p className="text-xs text-muted-foreground">Distribution by category</p>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 min-h-[300px]">
         <div className="h-full w-full min-h-[300px]">

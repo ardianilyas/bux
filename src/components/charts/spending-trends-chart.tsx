@@ -24,12 +24,31 @@ interface SpendingTrendsChartProps {
 export function SpendingTrendsChart({ data, userBaseCurrency }: SpendingTrendsChartProps) {
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-foreground">Spending Trends</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Your spending over the last 6 months
-        </p>
+    <Card className="h-full flex flex-col border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-900/10 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-indigo-500"
+            >
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+              <polyline points="16 7 22 7 22 13" />
+            </svg>
+          </div>
+          <div>
+            <CardTitle className="text-base font-semibold">Spending Trends</CardTitle>
+            <p className="text-xs text-muted-foreground">Last 6 months history</p>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex-1">
         <div className="h-full w-full min-h-[300px]">
