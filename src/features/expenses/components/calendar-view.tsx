@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { ExpenseDaySheet } from "./expense-day-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -48,7 +49,7 @@ export function CalendarView() {
   const selectedDayData = useMemo(() => {
     if (!selectedDate) return { expenses: [], total: 0 };
 
-    const dateKey = selectedDate.toISOString().split('T')[0];
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
     const dayData = expenseMap.get(dateKey);
 
     return {
@@ -74,7 +75,7 @@ export function CalendarView() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth - 1, day);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = format(date, "yyyy-MM-dd");
       const dayData = expenseMap.get(dateKey);
 
       days.push({

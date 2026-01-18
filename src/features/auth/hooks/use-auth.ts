@@ -64,6 +64,25 @@ export function useLogin() {
   return { login, isLoading };
 }
 
+export function useSocialLogin() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      await signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+    } catch (error) {
+      toast.error("Failed to sign in with Google");
+      setIsLoading(false);
+    }
+  };
+
+  return { loginWithGoogle, isLoading };
+}
+
 export function useRegister() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
