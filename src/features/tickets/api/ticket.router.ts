@@ -331,7 +331,7 @@ export const ticketRouter = createTRPCRouter({
 
       const canManage =
         ctx.session.user.role === "superadmin" ||
-        existingTicket.assignedToId === ctx.session.user.id;
+        ctx.session.user.role === "admin";
 
       if (!canManage) {
         throw new TRPCError({
@@ -386,7 +386,7 @@ export const ticketRouter = createTRPCRouter({
 
       const canManage =
         ctx.session.user.role === "superadmin" ||
-        existingTicket.assignedToId === ctx.session.user.id;
+        ctx.session.user.role === "admin";
 
       if (!canManage) {
         throw new TRPCError({

@@ -210,7 +210,7 @@ export function AdminTicketDetailView() {
         <div className="flex-1 space-y-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketNumber ? `BUX-${ticket.ticketNumber.toString().padStart(4, "0")}` : `#${ticket.id.slice(0, 8)}`}</span>
+              <span className="text-xs font-mono text-muted-foreground">{ticket.ticketCode}</span>
               <span className="text-xs text-muted-foreground">•</span>
               <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true })}</span>
             </div>
@@ -249,104 +249,180 @@ export function AdminTicketDetailView() {
             </CardHeader>
             <CardContent className="space-y-3">
               {ticket.messages?.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    No messages yet
+                <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                  <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
+                    <MessageCircle className="h-6 w-6 text-zinc-400" />
+                  </div>
+                  <h4 className="text-sm font-medium text-foreground">No discussion yet</h4>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+                    Internal notes and customer replies will appear here.
                   </p>
                 </div>
               ) : (
-                ticket.messages?.map((msg: any) => (
-                  <div
-                    key={msg.id}
-                    className={`p-4 rounded-lg ${msg.isInternal
-                      ? "bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
-                      : "bg-muted/50 border border-border/50 hover:border-border transition-colors"
-                      }`}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-4 w-4 text-primary" />
+                <div className="space-y-6">
+                  {ticket.messages?.map((msg: any) => {
+                    const isInternal = msg.isInternal;
+                    // In Admin view: 
+                    // Customer (ticket.userId) -> Left
+                    // Admin/Support -> Right
+                    const isCustomer = msg.user?.id === ticket.userId;
+                    const isAdmin = !isCustomer;
+
+                    if (isInternal) {
+                      return (
+                        <div key={msg.id} className="mx-auto w-full max-w-[90%] bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-900/40 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-200/40 dark:border-amber-900/40">
+                            <Badge variant="outline" className="h-5 gap-1 bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800">
+                              <EyeOff className="h-3 w-3" />
+                              Internal Note
+                            </Badge>
+                            <span className="text-xs font-medium text-amber-800 dark:text-amber-500">{msg.user?.name}</span>
+                            <span className="text-[10px] text-amber-700/60 dark:text-amber-500/60 ml-auto">
+                              {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-amber-900/90 dark:text-amber-100/90 leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={msg.id} className={cn("flex gap-3 max-w-[85%]", isAdmin ? "ml-auto flex-row-reverse" : "")}>
+                        <div className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm",
+                          isAdmin
+                            ? "bg-zinc-100 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300"
+                            : "bg-white border-zinc-200 text-primary dark:bg-zinc-950 dark:border-zinc-800"
+                        )}>
+                          {isAdmin ? <User className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                        </div>
+                        <div className={cn("space-y-1 min-w-0", isAdmin ? "items-end" : "items-start")}>
+                          <div className={cn("flex items-center gap-2", isAdmin ? "flex-row-reverse" : "")}>
+                            <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                              {msg.user?.name}
+                              {isAdmin && <span className="text-[10px] font-medium px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700 text-zinc-500">Admin</span>}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}</span>
+                          </div>
+                          <div className={cn(
+                            "rounded-2xl px-5 py-3.5 text-sm shadow-sm border",
+                            isAdmin
+                              ? "bg-zinc-100 border-zinc-200 text-zinc-900 rounded-tr-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
+                              : "bg-white border-zinc-100 text-zinc-800 rounded-tl-sm dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-300"
+                          )}>
+                            <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-semibold">{msg.user?.name}</span>
-                        {msg.isInternal && (
-                          <Badge variant="outline" className="text-yellow-600 border-yellow-200 dark:border-yellow-800 gap-1 bg-yellow-100 dark:bg-yellow-900/30">
-                            <EyeOff className="h-3 w-3" />
-                            Internal Note
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap pl-10">{msg.message}</p>
-                  </div>
-                ))
+                    )
+                  })}
+                </div>
               )}
 
               {/* Reply Form */}
-              <div className="pt-4 border-t space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="admin-message" className="text-sm font-medium">Add a message or note</Label>
-                  <Select
-                    value={quickResponse}
-                    onValueChange={handleQuickResponse}
-                    disabled={isReadOnly}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Quick response..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="investigating">Investigating</SelectItem>
-                      <SelectItem value="update">Update required</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="p-4 bg-muted/50 border-t">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Label htmlFor="internal-note" className="text-sm font-medium">Internal Note</Label>
+              <div className="pt-4 space-y-4">
+                <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-card overflow-hidden shadow-sm">
+                  {/* Controls Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center space-x-2 bg-white dark:bg-zinc-950 px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 shadow-sm">
                         <Checkbox
                           id="internal-note"
                           checked={isInternal}
                           onCheckedChange={(checked) => setIsInternal(checked as boolean)}
                           disabled={isReadOnly}
+                          className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                         />
+                        <Label htmlFor="internal-note" className={cn("text-xs font-medium cursor-pointer select-none", isInternal ? "text-amber-600 dark:text-amber-500" : "text-muted-foreground")}>
+                          Internal Note
+                        </Label>
                       </div>
+                      {isInternal && (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-500 animate-in fade-in slide-in-from-left-2 hidden sm:inline-block">
+                          (Only visible to admins)
+                        </span>
+                      )}
                     </div>
+
+                    <Select
+                      value={quickResponse}
+                      onValueChange={handleQuickResponse}
+                      disabled={isReadOnly}
+                    >
+                      <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs bg-white dark:bg-zinc-950">
+                        <SelectValue placeholder="Quick response..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="investigating">Investigating</SelectItem>
+                        <SelectItem value="update">Update required</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Input Area */}
+                  <div className={cn("p-4 transition-colors duration-200", isInternal ? "bg-amber-50/30 dark:bg-amber-950/10" : "bg-transparent")}>
                     <Textarea
                       placeholder={isInternal ? "Add an internal note solely for other admins..." : "Type your reply to the customer..."}
-                      className={cn("min-h-[100px]", isInternal && "bg-yellow-50/50 border-yellow-200")}
+                      className={cn(
+                        "resize-none min-h-[120px] shadow-none border-0 focus-visible:ring-0 text-base bg-transparent placeholder:text-muted-foreground/60",
+                        isInternal ? "text-amber-900 dark:text-amber-100 placeholder:text-amber-700/40" : ""
+                      )}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       disabled={isReadOnly}
                     />
-                    <div className="flex justify-end">
-                      <Button onClick={handleSendMessage} disabled={isSending || !newMessage.trim() || isReadOnly}>
-                        {isSending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Send Reply
-                          </>
-                        )}
-                      </Button>
+                  </div>
+
+                  {/* Footer / Send */}
+                  <div className={cn(
+                    "flex flex-col sm:flex-row justify-between items-center gap-4 p-3 border-t",
+                    isInternal ? "border-amber-200/50 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/10" : "border-zinc-200 dark:border-zinc-800"
+                  )}>
+                    <div className="text-[11px] text-muted-foreground hidden sm:block">
+                      {isInternal ? (
+                        <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
+                          <EyeOff className="h-3 w-3" />
+                          Not visible to customer
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <Send className="h-3 w-3" />
+                          Will notify via email
+                        </span>
+                      )}
                     </div>
-                    {isReadOnly && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        You cannot reply to this ticket mainly because you are not assigned to it.
-                      </p>
-                    )}
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={isSending || !newMessage.trim() || isReadOnly}
+                      size="sm"
+                      className={cn(
+                        "w-full sm:w-auto",
+                        isInternal
+                          ? "bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
+                          : ""
+                      )}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          {isInternal ? "Post Internal Note" : "Send Reply"}
+                          {isInternal ? <Lock className="ml-2 h-3.5 w-3.5" /> : <Send className="ml-2 h-3.5 w-3.5" />}
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
+
+                {isReadOnly && (
+                  <p className="text-xs text-muted-foreground text-center bg-zinc-100 dark:bg-zinc-800/50 py-2 rounded-lg">
+                    You cannot reply to this ticket because you don't have permission.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -359,143 +435,130 @@ export function AdminTicketDetailView() {
               <CardTitle className="text-lg font-semibold">Ticket Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
-                  <div className="mt-1">
-                    {getStatusBadge(ticket.status)}
-                  </div>
+                  <Select
+                    value={ticket.status}
+                    onValueChange={(val: any) => handleUpdateStatus(val)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger className="w-full h-9 bg-background border-zinc-200 dark:border-zinc-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">
+                        <div className="flex items-center gap-2">
+                          <Circle className="h-3.5 w-3.5 text-blue-500" />
+                          <span>Open</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <div className="flex items-center gap-2">
+                          <Timer className="h-3.5 w-3.5 text-purple-500" />
+                          <span>In Progress</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="resolved">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                          <span>Resolved</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="closed">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="h-3.5 w-3.5 text-gray-500" />
+                          <span>Closed</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
+
+                <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Priority</label>
-                  <div className="mt-1">
-                    {getPriorityBadge(ticket.priority)}
-                  </div>
+                  <Select
+                    value={ticket.priority}
+                    onValueChange={(val: any) => handleUpdatePriority(val)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger className="w-full h-9 bg-background border-zinc-200 dark:border-zinc-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="urgent">
+                        <div className="flex items-center gap-2">
+                          <Siren className="h-3.5 w-3.5 text-red-500" />
+                          <span>Urgent</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="high">
+                        <div className="flex items-center gap-2">
+                          <ArrowUp className="h-3.5 w-3.5 text-orange-500" />
+                          <span>High</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="medium">
+                        <div className="flex items-center gap-2">
+                          <ArrowRight className="h-3.5 w-3.5 text-yellow-500" />
+                          <span>Medium</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="low">
+                        <div className="flex items-center gap-2">
+                          <ArrowDown className="h-3.5 w-3.5 text-green-500" />
+                          <span>Low</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
+
+                <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assigned To</label>
-                  <p className="mt-1 text-sm font-medium">
-                    {ticket.assignedTo?.name || (
-                      <span className="text-muted-foreground">Unassigned</span>
-                    )}
-                  </p>
+                  <Select
+                    value={ticket.assignedToId || "unassigned"}
+                    onValueChange={(val) => handleUpdateAssignee(val === "unassigned" ? null : val)}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger className="w-full h-9 bg-background border-zinc-200 dark:border-zinc-800">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">
+                        <span className="text-muted-foreground">Unassigned</span>
+                      </SelectItem>
+                      {admins?.map((admin: any) => (
+                        <SelectItem key={admin.id} value={admin.id}>
+                          {admin.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="pt-3 border-t">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                     {ticket.user?.name?.charAt(0) || "?"}
                   </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Customer</p>
+                    <p className="text-sm font-semibold truncate">{ticket.user?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{ticket.user?.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <p className="text-sm font-semibold">{ticket.user?.name}</p>
-                    <p className="text-xs text-muted-foreground break-all">{ticket.user?.email}</p>
+                    <p className="text-muted-foreground mb-1">Created</p>
+                    <p className="font-medium">{new Date(ticket.createdAt).toLocaleDateString()}</p>
                   </div>
-                </div>
-              </div>
-
-
-              <div className="pt-3 border-t">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                      <MoreVertical className="mr-2 h-4 w-4" />
-                      Manage Ticket
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Change Priority
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => handleUpdatePriority("urgent")}>
-                          <Siren className="mr-2 h-4 w-4 text-red-600" />
-                          Urgent
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePriority("high")}>
-                          <ArrowUp className="mr-2 h-4 w-4 text-orange-600" />
-                          High
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePriority("medium")}>
-                          <ArrowRight className="mr-2 h-4 w-4 text-yellow-600" />
-                          Medium
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdatePriority("low")}>
-                          <ArrowDown className="mr-2 h-4 w-4 text-green-600" />
-                          Low
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Circle className="mr-2 h-4 w-4" />
-                        Change Status
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus("open")}>
-                          <Circle className="mr-2 h-4 w-4 text-blue-600" />
-                          Open
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus("in_progress")}>
-                          <Timer className="mr-2 h-4 w-4 text-purple-600" />
-                          In Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus("resolved")}>
-                          <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                          Resolved
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateStatus("closed")}>
-                          <XCircle className="mr-2 h-4 w-4 text-gray-600" />
-                          Closed
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <User className="mr-2 h-4 w-4" />
-                        Assign To
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => handleUpdateAssignee(null)}>
-                          Unassigned
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {admins?.map((admin: any) => (
-                          <DropdownMenuItem key={admin.id} onClick={() => handleUpdateAssignee(admin.id)}>
-                            {admin.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="pt-3 border-t space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</label>
-                  <div className="mt-1">
-                    {getCategoryBadge(ticket.category)}
+                  <div>
+                    <p className="text-muted-foreground mb-1">Last Updated</p>
+                    <p className="font-medium">{new Date(ticket.updatedAt).toLocaleDateString()}</p>
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Created</label>
-                  <p className="mt-1 text-sm">{new Date(ticket.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Updated</label>
-                  <p className="mt-1 text-sm">{new Date(ticket.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}</p>
                 </div>
               </div>
             </CardContent>

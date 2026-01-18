@@ -20,7 +20,7 @@ export function useAdminTicketManagement() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const canManage = (user as any)?.role === "superadmin" || ((user as any)?.role === "admin" && ticket?.assignedToId === user?.id);
+  const canManage = (user as any)?.role === "superadmin" || (user as any)?.role === "admin";
 
   const updateMutation = trpc.ticket.adminUpdate.useMutation({
     onSuccess: () => {

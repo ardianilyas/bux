@@ -116,14 +116,19 @@ export function AnnouncementsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
-          <p className="text-muted-foreground">Manage system-wide announcements and notifications.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
+            <Megaphone className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Announcements</h1>
+            <p className="text-sm text-muted-foreground">Manage system-wide broadcasts and notifications.</p>
+          </div>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90">
               <Plus className="mr-2 h-4 w-4" />
               New Announcement
             </Button>
@@ -142,11 +147,8 @@ export function AnnouncementsView() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-foreground">All Announcements</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <CardContent className="p-0">
           {announcements?.length === 0 ? (
             <EmptyState
               icon={Megaphone}
@@ -160,67 +162,86 @@ export function AnnouncementsView() {
               }
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {announcements?.map((announcement: any) => (
-                  <TableRow key={announcement.id}>
-                    <TableCell className="font-medium text-foreground">
-                      {announcement.title}
-                    </TableCell>
-                    <TableCell>
-                      {getTypeBadge(announcement.type)}
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={announcement.isActive}
-                        onCheckedChange={(checked) =>
-                          toggleMutation.mutate({
-                            id: announcement.id,
-                            isActive: checked,
-                          })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(announcement.createdAt)}
-                    </TableCell>
-                    <TableCell>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingAnnouncement(announcement)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => setDeletingId(announcement.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
+                  <TableRow>
+                    <TableHead className="w-[40%] pl-6">Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead className="w-[100px] text-right pr-6">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {announcements?.map((announcement: any) => {
+                    const isActive = announcement.isActive;
+                    return (
+                      <TableRow
+                        key={announcement.id}
+                        className={!isActive ? "bg-zinc-50/50 dark:bg-zinc-900/20" : ""}
+                      >
+                        <TableCell className="pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                              <Megaphone className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className={`font-medium ${!isActive ? "text-muted-foreground line-through decoration-zinc-400/50" : "text-foreground"}`}>
+                                {announcement.title}
+                              </p>
+                              {!isActive && <p className="text-[10px] text-muted-foreground">Inactive</p>}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className={!isActive ? "opacity-60 grayscale" : ""}>
+                            {getTypeBadge(announcement.type)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={announcement.isActive}
+                            onCheckedChange={(checked) =>
+                              toggleMutation.mutate({
+                                id: announcement.id,
+                                isActive: checked,
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(announcement.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditingAnnouncement(announcement)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20"
+                                onClick={() => setDeletingId(announcement.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

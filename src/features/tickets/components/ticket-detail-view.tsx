@@ -227,29 +227,40 @@ export function TicketDetailView() {
             <h3 className="text-sm font-medium text-muted-foreground ml-1">Discussion</h3>
 
             {messages.length === 0 ? (
-              <div className="text-center py-8 border rounded-lg border-dashed">
-                <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground/20 mb-2" />
-                <p className="text-sm text-muted-foreground">No replies yet.</p>
+              <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
+                  <MessageCircle className="h-6 w-6 text-zinc-400" />
+                </div>
+                <h4 className="text-sm font-medium text-foreground">No discussion yet</h4>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[250px]">
+                  Start the conversation by sending a message below.
+                </p>
               </div>
             ) : (
               <div className="space-y-6">
                 {messages.map((msg: any) => {
-                  const isUser = msg.user?.id === ticket.userId; // Assuming user is the creator
-                  // In reality, we might check session.user.id but for now let's assume if it's NOT an admin message it's the user
-                  // Actually the API returns user object. 
+                  const isUser = msg.user?.id === ticket.userId;
 
                   return (
-                    <div key={msg.id} className={cn("flex gap-3 max-w-2xl", isUser ? "ml-auto flex-row-reverse" : "")}>
-                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                    <div key={msg.id} className={cn("flex gap-3 max-w-[85%]", isUser ? "ml-auto flex-row-reverse" : "")}>
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm",
+                        isUser
+                          ? "bg-zinc-100 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300"
+                          : "bg-white border-zinc-200 text-primary dark:bg-zinc-950 dark:border-zinc-800"
+                      )}>
                         {isUser ? <User className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
                       </div>
-                      <div className={cn("space-y-1", isUser ? "items-end" : "items-start")}>
+                      <div className={cn("space-y-1 min-w-0", isUser ? "items-end" : "items-start")}>
                         <div className={cn("flex items-center gap-2", isUser ? "flex-row-reverse" : "")}>
-                          <span className="text-xs font-medium text-foreground">{msg.user?.name || "Support"}</span>
+                          <span className="text-xs font-semibold text-foreground">{msg.user?.name || "Support"}</span>
                           <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}</span>
                         </div>
-                        <div className={cn("rounded-2xl px-4 py-3 text-sm shadow-sm",
-                          isUser ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border border-border rounded-tl-sm"
+                        <div className={cn(
+                          "rounded-2xl px-5 py-3.5 text-sm shadow-sm border",
+                          isUser
+                            ? "bg-zinc-100 border-zinc-200 text-zinc-900 rounded-tr-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
+                            : "bg-white border-zinc-100 text-zinc-800 rounded-tl-sm dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-300"
                         )}>
                           <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                         </div>
@@ -262,39 +273,51 @@ export function TicketDetailView() {
           </div>
 
           {/* Reply Area */}
-          <Card className={cn("shadow-sm border-muted transition-all", ticket.status === "closed" ? "opacity-75" : "")}>
-            <CardContent className="p-4">
+          <Card className={cn("overflow-hidden border-zinc-200 dark:border-zinc-800 shadow-sm transition-all duration-200", ticket.status === "closed" ? "opacity-75 bg-zinc-50 dark:bg-zinc-900/50" : "bg-card")}>
+            <CardContent className="p-0">
               {ticket.status !== "closed" ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="sr-only">Message</Label>
+                <div className="flex flex-col">
+                  <div className="p-4">
+                    <Label htmlFor="message" className="derived-sr-only mb-2 block text-xs font-medium text-muted-foreground">Type your reply</Label>
                     <Textarea
                       id="message"
-                      placeholder="Type your reply here..."
+                      placeholder="Type your reply to the support team..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      rows={3}
-                      className="resize-none min-h-[100px] bg-background"
+                      rows={4}
+                      className="resize-none min-h-[120px] bg-transparent border-0 ring-0 focus-visible:ring-0 placeholder:text-muted-foreground/60 text-base"
                     />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex justify-between items-center p-4 bg-zinc-50/50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800">
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                      <ShieldAlert className="h-3 w-3" />
                       Most replies are answered within 24 hours.
                     </p>
-                    <Button onClick={handleSendMessage} disabled={addMessageMutation.isPending || !newMessage.trim()}>
-                      <Send className="mr-2 h-4 w-4" />
-                      {addMessageMutation.isPending ? "Sending..." : "Send Reply"}
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={addMessageMutation.isPending || !newMessage.trim()}
+                      size="sm"
+                      className="px-4 h-9"
+                    >
+                      {addMessageMutation.isPending ? (
+                        <>Sending...</>
+                      ) : (
+                        <>
+                          Send Reply
+                          <Send className="ml-2 h-3.5 w-3.5" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted mb-2">
-                    <XCircle className="h-5 w-5 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-3">
+                    <CheckCircle2 className="h-6 w-6 text-zinc-500" />
                   </div>
                   <h3 className="font-medium text-foreground">Ticket Closed</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This ticket has been closed. Please create a new ticket for other inquiries.
+                  <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+                    This ticket has been resolved and closed. Please create a new ticket for further inquiries.
                   </p>
                 </div>
               )}

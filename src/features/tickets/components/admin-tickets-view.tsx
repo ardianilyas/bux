@@ -296,7 +296,7 @@ export function AdminTicketsView() {
                 </TableRow>
               ) : (
                 tickets?.map((ticket: any) => {
-                  const canManage = currentUser?.role === "superadmin" || (currentUser?.role === "admin" && ticket.assignedToId === currentUser?.id);
+                  const canManage = currentUser?.role === "superadmin" || (currentUser?.role === "admin");
 
                   return (
                     <TableRow key={ticket.id}>
