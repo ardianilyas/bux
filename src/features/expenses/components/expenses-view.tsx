@@ -20,6 +20,7 @@ import { ReceiptUpload } from "@/features/receipts";
 import { useExpenseManagement } from "../hooks/use-expense-management";
 import { PaginationControl } from "@/components/ui/pagination-control";
 import { Plus, Download, Receipt } from "lucide-react";
+import { FloatingActionButton } from "@/components/floating-action-button";
 
 export function ExpensesView() {
   const {
@@ -197,6 +198,14 @@ export function ExpensesView() {
           />
         </div>
       )}
+
+      {/* Mobile Quick Add FAB */}
+      <FloatingActionButton
+        onClick={() => {
+          resetForm();
+          setIsCreateOpen(true);
+        }}
+      />
     </div>
   );
 }
