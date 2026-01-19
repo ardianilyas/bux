@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { PaginationControl } from "@/components/ui/pagination-control";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EmptyState } from "@/components/empty-state";
-import { Plus, PiggyBank } from "lucide-react";
+import { Plus, PiggyBank, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PLAN_LIMITS, PLAN_TYPES } from "@/features/billing/lib/billing-constants";
 import { SavingsGoalCard } from "./savings-goal-card";
@@ -42,8 +43,11 @@ export function SavingsView() {
   const { data: subscription } = trpc.billing.getStatus.useQuery();
   const isPro = subscription?.plan === PLAN_TYPES.PRO;
   const maxGoals = isPro ? PLAN_LIMITS.pro.maxSavingsGoals : PLAN_LIMITS.free.maxSavingsGoals;
+  // Calculate limits after fetching data
 
   const { savingsGoals, pagination, page, setPage, isLoading } = useSavingsGoals();
+
+  const isOverLimit = !isPro && (savingsGoals?.length || 0) > maxGoals;
   const createMutation = useCreateSavingsGoal();
   const updateMutation = useUpdateSavingsGoal();
   const deleteMutation = useDeleteSavingsGoal();
@@ -224,57 +228,74 @@ export function SavingsView() {
         </Dialog>
       </div>
 
-      {!hasGoals ? (
-        <EmptyState
-          icon={PiggyBank}
-          title="No savings goals yet"
-          description="Create your first savings goal to start tracking your progress toward financial freedom"
-          action={
-            <Button
-              onClick={() => {
-                if (!isPro && (savingsGoals?.length || 0) >= maxGoals) {
-                  toast.error("Free plan is limited to 1 savings goal", {
-                    action: {
-                      label: "Upgrade",
-                      onClick: () => router.push("/dashboard/billing"),
-                    },
-                  });
-                  return;
-                }
-                setIsCreateOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Goal
-            </Button>
-          }
-        />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {savingsGoals?.map((goal) => (
-            <SavingsGoalCard
-              key={goal.id}
-              goal={goal}
-              onEdit={setEditingGoal}
-              onDelete={setDeletingId}
-              onAddFunds={setAddingGoal}
-              onTogglePin={handleTogglePin}
-              isDeleting={deleteMutation.isPending}
-              userBaseCurrency={userBaseCurrency}
-            />
-          ))}
-        </div>
-      )}
+      {
+        isOverLimit && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Plan Limit Exceeded</AlertTitle>
+            <AlertDescription>
+              You have {savingsGoals?.length} active savings goals, but the Free plan only allows {maxGoals}.
+              Please <span className="font-semibold underline cursor-pointer" onClick={() => router.push('/dashboard/billing')}>upgrade to Pro</span> to create more, or delete unused goals to restore creation access.
+            </AlertDescription>
+          </Alert>
+        )
+      }
 
-      {pagination && (
-        <div className="flex justify-end mt-4">
-          <PaginationControl
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
+      {
+        !hasGoals ? (
+          <EmptyState
+            icon={PiggyBank}
+            title="No savings goals yet"
+            description="Create your first savings goal to start tracking your progress toward financial freedom"
+            action={
+              <Button
+                onClick={() => {
+                  if (!isPro && (savingsGoals?.length || 0) >= maxGoals) {
+                    toast.error("Free plan is limited to 1 savings goal", {
+                      action: {
+                        label: "Upgrade",
+                        onClick: () => router.push("/dashboard/billing"),
+                      },
+                    });
+                    return;
+                  }
+                  setIsCreateOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Goal
+              </Button>
+            }
           />
-        </div>
-      )}
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {savingsGoals?.map((goal) => (
+              <SavingsGoalCard
+                key={goal.id}
+                goal={goal}
+                onEdit={setEditingGoal}
+                onDelete={setDeletingId}
+                onAddFunds={setAddingGoal}
+                onTogglePin={handleTogglePin}
+                isDeleting={deleteMutation.isPending}
+                userBaseCurrency={userBaseCurrency}
+              />
+            ))}
+          </div>
+        )
+      }
+
+      {
+        pagination && (
+          <div className="flex justify-end mt-4">
+            <PaginationControl
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )
+      }
 
       {/* Edit Dialog */}
       <Dialog
@@ -312,6 +333,6 @@ export function SavingsView() {
         isLoading={addFundsMutation.isPending}
         userBaseCurrency={userBaseCurrency}
       />
-    </div>
+    </div >
   );
 }

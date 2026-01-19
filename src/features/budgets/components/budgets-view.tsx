@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ export function BudgetsView() {
   const { data: subscription } = trpc.billing.getStatus.useQuery();
   const isPro = subscription?.plan === PLAN_TYPES.PRO;
   const maxBudgets = isPro ? PLAN_LIMITS.pro.maxBudgets : PLAN_LIMITS.free.maxBudgets;
+  // Calculate limits after fetching data
 
   const {
     budgets,
@@ -62,6 +65,8 @@ export function BudgetsView() {
     openEditDialog,
     resetForm,
   } = useBudgetManagement();
+
+  const isOverLimit = !isPro && (budgets?.length || 0) > maxBudgets;
 
   if (budgetsLoading) {
     return (
@@ -144,34 +149,51 @@ export function BudgetsView() {
         </Dialog>
       </div>
 
-      {!hasCategories || !hasBudgets ? (
-        <BudgetEmptyState hasCategories={hasCategories ?? false} />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {budgets?.map((budget) => (
-            <BudgetCard
-              key={budget.id}
-              budget={budget}
-              // @ts-ignore - spent is added by backend aggregation
-              spent={budget.spent || 0}
-              onEdit={openEditDialog}
-              onDelete={setDeletingId}
-              isDeleting={deleteMutation.isPending}
-              userBaseCurrency={userBaseCurrency}
-            />
-          ))}
-        </div>
-      )}
+      {
+        isOverLimit && (
+          <Alert variant="warning" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Plan Limit Exceeded</AlertTitle>
+            <AlertDescription>
+              You have {budgets?.length} active budgets, but the Free plan only allows {maxBudgets}.
+              Please <span className="font-semibold underline cursor-pointer" onClick={() => router.push('/dashboard/billing')}>upgrade to Pro</span> to create more, or delete unused budgets to restore creation access.
+            </AlertDescription>
+          </Alert>
+        )
+      }
 
-      {pagination && (
-        <div className="flex justify-end mt-4">
-          <PaginationControl
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
+      {
+        !hasCategories || !hasBudgets ? (
+          <BudgetEmptyState hasCategories={hasCategories ?? false} />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {budgets?.map((budget) => (
+              <BudgetCard
+                key={budget.id}
+                budget={budget}
+                // @ts-ignore - spent is added by backend aggregation
+                spent={budget.spent || 0}
+                onEdit={openEditDialog}
+                onDelete={setDeletingId}
+                isDeleting={deleteMutation.isPending}
+                userBaseCurrency={userBaseCurrency}
+              />
+            ))}
+          </div>
+        )
+      }
+
+      {
+        pagination && (
+          <div className="flex justify-end mt-4">
+            <PaginationControl
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )
+      }
 
       {/* Edit Dialog */}
       <Dialog
@@ -202,6 +224,6 @@ export function BudgetsView() {
         description="Are you sure you want to delete this budget? This action cannot be undone."
         isDeleting={deleteMutation.isPending}
       />
-    </div>
+    </div >
   );
 }
