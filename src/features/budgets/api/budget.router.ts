@@ -105,6 +105,10 @@ export const budgetRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createBudgetSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check plan limit before creating
+      const { enforceBudgetLimit } = await import("@/features/billing/lib/plan-limits");
+      await enforceBudgetLimit(ctx.session.user.id);
+
       // Check if budget already exists for this category
       const existing = await db.query.budgets.findFirst({
         where: and(

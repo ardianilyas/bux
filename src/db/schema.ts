@@ -24,6 +24,12 @@ export const users = pgTable("users", {
   statusReason: text("status_reason"),
   statusExpiresAt: timestamp("status_expires_at"),
   currency: text("currency").notNull().default("IDR"),
+  // Subscription fields
+  plan: text("plan").notNull().default("free"), // 'free' | 'pro'
+  planExpiresAt: timestamp("plan_expires_at"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  trialUsed: boolean("trial_used").notNull().default(false),
+  xenditPaymentRequestId: text("xendit_payment_request_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -203,6 +209,28 @@ export const savingsGoals = pgTable("savings_goals", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ==================== Payments Table ====================
+
+export const payments = pgTable("payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  xenditId: text("xendit_id").notNull(), // Xendit payment ID
+  referenceId: text("reference_id").notNull(), // Our reference: bux_pro_{period}_{userId}_{timestamp}
+  type: text("type").notNull().default("QR_CODE"), // QR_CODE, EWALLET, etc.
+  status: text("status").notNull(), // ACTIVE, SUCCEEDED, FAILED, EXPIRED
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("IDR"),
+  billingPeriod: text("billing_period"), // monthly, yearly
+  qrString: text("qr_string"), // QRIS QR code string
+  channelCode: text("channel_code"), // QRIS, DANA, OVO, etc.
+  failureCode: text("failure_code"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  xenditCreatedAt: timestamp("xendit_created_at"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ==================== Relations ====================
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -215,6 +243,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   tickets: many(tickets),
   ticketMessages: many(ticketMessages),
   savingsGoals: many(savingsGoals),
+  payments: many(payments),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -354,5 +383,7 @@ export type SavingsGoal = typeof savingsGoals.$inferSelect;
 export type NewSavingsGoal = typeof savingsGoals.$inferInsert;
 export type FeatureToggle = typeof featureToggles.$inferSelect;
 export type NewFeatureToggle = typeof featureToggles.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type NewPayment = typeof payments.$inferInsert;
 
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/features/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PricingSection } from "@/features/billing/components/pricing-section";
 
 export function LandingView() {
   const { data: session } = useSession();
@@ -203,6 +204,9 @@ export function LandingView() {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* Footer */}
       <footer className="border-t border-border mt-24">

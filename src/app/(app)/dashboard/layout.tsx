@@ -269,6 +269,25 @@ const menuItems = [
     ),
   },
   {
+    title: "Billing",
+    url: "/dashboard/billing",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87l6.391.933a.5.5 0 0 1 .271.854L17.436 15.1l1.086 6.314a.5.5 0 0 1-.7.526L12 19.088l-5.821 2.852a.5.5 0 0 1-.7-.526l1.086-6.314-4.617-4.443a.5.5 0 0 1 .271-.854l6.391-.933z" />
+      </svg>
+    ),
+  },
+  {
     title: "Insights",
     url: "/dashboard/insights",
     featureKey: "insights",
@@ -389,6 +408,7 @@ const userMenuItems = [
   menuItems.find(m => m.title === "Savings Goals")!,
   menuItems.find(m => m.title === "Support")!,
   menuItems.find(m => m.title === "Settings")!,
+  menuItems.find(m => m.title === "Billing")!,
 ];
 
 const adminMenuItems = [

@@ -59,6 +59,10 @@ export const savingsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createSavingsSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check plan limit before creating
+      const { enforceSavingsLimit } = await import("@/features/billing/lib/plan-limits");
+      await enforceSavingsLimit(ctx.session.user.id);
+
       const [goal] = await db
         .insert(savingsGoals)
         .values({
