@@ -1,5 +1,7 @@
 "use client";
 
+import { trpc } from "@/trpc/client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +16,8 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog";
 import { PaginationControl } from "@/components/ui/pagination-control";
 import { EmptyState } from "@/components/empty-state";
 import { Plus, PiggyBank } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { PLAN_LIMITS, PLAN_TYPES } from "@/features/billing/lib/billing-constants";
 import { SavingsGoalCard } from "./savings-goal-card";
 import { SavingsGoalForm } from "./savings-goal-form";
 import { AddFundsDialog } from "./add-funds-dialog";
@@ -32,7 +36,12 @@ import { toast } from "sonner";
 
 export function SavingsView() {
   const { data: session } = useSession();
+  const router = useRouter();
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
+  const { data: subscription } = trpc.billing.getStatus.useQuery();
+  const isPro = subscription?.plan === PLAN_TYPES.PRO;
+  const maxGoals = isPro ? PLAN_LIMITS.pro.maxSavingsGoals : PLAN_LIMITS.free.maxSavingsGoals;
 
   const { savingsGoals, pagination, page, setPage, isLoading } = useSavingsGoals();
   const createMutation = useCreateSavingsGoal();
@@ -184,7 +193,19 @@ export function SavingsView() {
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button
+              onClick={(e) => {
+                if (!isPro && (savingsGoals?.length || 0) >= maxGoals) {
+                  e.preventDefault();
+                  toast.error("Free plan is limited to 1 savings goal", {
+                    action: {
+                      label: "Upgrade",
+                      onClick: () => router.push("/dashboard/billing"),
+                    },
+                  });
+                }
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Goal
             </Button>
@@ -209,7 +230,20 @@ export function SavingsView() {
           title="No savings goals yet"
           description="Create your first savings goal to start tracking your progress toward financial freedom"
           action={
-            <Button onClick={() => setIsCreateOpen(true)}>
+            <Button
+              onClick={() => {
+                if (!isPro && (savingsGoals?.length || 0) >= maxGoals) {
+                  toast.error("Free plan is limited to 1 savings goal", {
+                    action: {
+                      label: "Upgrade",
+                      onClick: () => router.push("/dashboard/billing"),
+                    },
+                  });
+                  return;
+                }
+                setIsCreateOpen(true);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Your First Goal
             </Button>

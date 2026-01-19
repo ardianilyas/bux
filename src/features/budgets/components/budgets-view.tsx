@@ -1,5 +1,10 @@
 "use client";
 
+import { trpc } from "@/trpc/client";
+import { PLAN_LIMITS, PLAN_TYPES } from "@/features/billing/lib/billing-constants";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +28,12 @@ import { useSession } from "@/features/auth/hooks/use-auth";
 
 export function BudgetsView() {
   const { data: session } = useSession();
+  const router = useRouter();
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
+
+  const { data: subscription } = trpc.billing.getStatus.useQuery();
+  const isPro = subscription?.plan === PLAN_TYPES.PRO;
+  const maxBudgets = isPro ? PLAN_LIMITS.pro.maxBudgets : PLAN_LIMITS.free.maxBudgets;
 
   const {
     budgets,
@@ -84,8 +94,20 @@ export function BudgetsView() {
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button
-              onClick={resetForm}
-              disabled={!availableCategories || availableCategories.length === 0}
+              onClick={(e) => {
+                if (!isPro && (budgets?.length || 0) >= maxBudgets) {
+                  e.preventDefault();
+                  toast.error("Free plan is limited to 3 budgets", {
+                    action: {
+                      label: "Upgrade",
+                      onClick: () => router.push("/dashboard/billing"),
+                    },
+                  });
+                  return;
+                }
+                resetForm();
+              }}
+              disabled={(!availableCategories || availableCategories.length === 0)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
