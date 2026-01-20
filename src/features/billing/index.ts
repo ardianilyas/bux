@@ -46,3 +46,5 @@ export {
 
 // Components
 export { PricingSection } from "./components/pricing-section";
+export { BillingView } from "./components/billing-view";
+export { PaymentHistoryTable } from "./components/payment-history-table";

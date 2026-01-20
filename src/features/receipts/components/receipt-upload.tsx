@@ -10,17 +10,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { trpc } from "@/trpc/client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import { useScanReceipt } from "../hooks/use-scan-receipt";
-import { useCreateExpense } from "@/features/expenses";
-import { useCategories } from "@/features/categories";
-import { useSession } from "@/features/auth/hooks/use-auth";
+import { useSession } from "@/lib/auth-client";
 import { formatCurrency } from "@/lib/utils";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
+import { useCreateExpense } from "@/features/expenses/hooks/use-expenses";
+import { useCategories } from "@/features/categories";
 
 export function ReceiptUpload() {
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const { data: subscription } = trpc.billing.getStatus.useQuery();
+  const isPro = subscription?.isPro ?? false;
 
   const {
     status,
@@ -36,6 +44,25 @@ export function ReceiptUpload() {
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
 
   const createExpense = useCreateExpense();
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && !isPro) {
+      toast.error("Receipt scanning is a Pro feature", {
+        description: "Upgrade to Pro to automatically scan and extract expense details.",
+        action: {
+          label: "Upgrade",
+          onClick: () => router.push("/dashboard/billing?plan=pro"),
+        },
+      });
+      return;
+    }
+
+    if (newOpen) {
+      setOpen(true);
+    } else {
+      handleClose();
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,7 +121,7 @@ export function ReceiptUpload() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : handleClose())}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <svg
@@ -116,8 +143,10 @@ export function ReceiptUpload() {
             <path d="M16 17H8" />
           </svg>
           Scan Receipt
+          {!isPro && <Sparkles className="ml-2 h-3 w-3 text-yellow-500" />}
         </Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Scan Receipt</DialogTitle>
@@ -281,6 +310,6 @@ export function ReceiptUpload() {
           )}
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }
