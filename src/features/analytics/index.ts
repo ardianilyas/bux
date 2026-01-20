@@ -2,6 +2,7 @@
 
 // Components
 export { AdminDashboardView } from "./components/admin-dashboard-view";
+export { SubscriptionIncomeView } from "./components/subscription-income-view";
 
 // Hooks
 export {

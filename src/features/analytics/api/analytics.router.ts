@@ -1,6 +1,6 @@
 import { createTRPCRouter, adminProcedure } from "@/trpc/init";
 import { db } from "@/db";
-import { users, expenses, tickets, categories, subscriptions, ticketMessages } from "@/db/schema";
+import { users, expenses, tickets, categories, subscriptions, ticketMessages, payments } from "@/db/schema";
 import { sql, desc, gte, and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -417,4 +417,220 @@ export const analyticsRouter = createTRPCRouter({
       ticketsByStatus,
     };
   }),
+
+  /**
+   * Get subscription revenue income statistics
+   */
+  getSubscriptionIncome: adminProcedure.query(async () => {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Total all-time revenue from successful payments
+    const [totalRevenue] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${payments.amount}), 0)::numeric`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(payments)
+      .where(eq(payments.status, "SUCCEEDED"));
+
+    // Current month revenue
+    const [monthRevenue] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${payments.amount}), 0)::numeric`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.status, "SUCCEEDED"),
+          gte(payments.createdAt, firstDayOfMonth)
+        )
+      );
+
+    // Active Pro subscribers
+    const [activeProCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(
+        and(
+          eq(users.plan, "pro"),
+          sql`(${users.planExpiresAt} > ${now} OR ${users.trialEndsAt} > ${now})`
+        )
+      );
+
+    // Revenue breakdown by billing period
+    const billingBreakdown = await db
+      .select({
+        billingPeriod: payments.billingPeriod,
+        total: sql<number>`coalesce(sum(${payments.amount}), 0)::numeric`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(payments)
+      .where(eq(payments.status, "SUCCEEDED"))
+      .groupBy(payments.billingPeriod);
+
+    // Payment success rate (last 30 days)
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const [paymentStats] = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        succeeded: sql<number>`count(*) filter (where ${payments.status} = 'SUCCEEDED')::int`,
+        failed: sql<number>`count(*) filter (where ${payments.status} = 'FAILED')::int`,
+      })
+      .from(payments)
+      .where(gte(payments.createdAt, thirtyDaysAgo));
+
+    // Calculate MRR (Monthly Recurring Revenue)
+    // For simplicity, we'll calculate based on active subscriptions * monthly equivalent
+    const activeSubscriptions = await db
+      .select({
+        billingPeriod: payments.billingPeriod,
+        count: sql<number>`count(distinct ${payments.userId})::int`,
+      })
+      .from(payments)
+      .innerJoin(users, eq(users.id, payments.userId))
+      .where(
+        and(
+          eq(payments.status, "SUCCEEDED"),
+          eq(users.plan, "pro"),
+          sql`${users.planExpiresAt} > ${now}`
+        )
+      )
+      .groupBy(payments.billingPeriod);
+
+    // Calculate MRR: monthly subs * 39000 + yearly subs * (399000/12)
+    const MONTHLY_PRICE = 39000;
+    const YEARLY_PRICE = 399000;
+    let mrr = 0;
+    activeSubscriptions.forEach((sub) => {
+      if (sub.billingPeriod === "monthly") {
+        mrr += sub.count * MONTHLY_PRICE;
+      } else if (sub.billingPeriod === "yearly") {
+        mrr += sub.count * (YEARLY_PRICE / 12);
+      }
+    });
+
+    // Calculate growth rate (compare this month to last month)
+    const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const [lastMonthRevenue] = await db
+      .select({
+        total: sql<number>`coalesce(sum(${payments.amount}), 0)::numeric`,
+      })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.status, "SUCCEEDED"),
+          gte(payments.createdAt, firstDayOfLastMonth),
+          sql`${payments.createdAt} <= ${lastDayOfLastMonth}`
+        )
+      );
+
+    const thisMonthTotal = Number(monthRevenue?.total ?? 0);
+    const lastMonthTotal = Number(lastMonthRevenue?.total ?? 0);
+    const growthRate = lastMonthTotal > 0
+      ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
+      : thisMonthTotal > 0 ? 100 : 0;
+
+    return {
+      totalRevenue: Number(totalRevenue?.total ?? 0),
+      totalPayments: totalRevenue?.count ?? 0,
+      monthRevenue: thisMonthTotal,
+      monthPayments: monthRevenue?.count ?? 0,
+      mrr: Math.round(mrr),
+      activeProSubscribers: activeProCount?.count ?? 0,
+      growthRate: Number(growthRate.toFixed(2)),
+      billingBreakdown: billingBreakdown.map((b) => ({
+        billingPeriod: b.billingPeriod,
+        total: Number(b.total),
+        count: b.count,
+      })),
+      paymentSuccessRate: paymentStats?.total && paymentStats.total > 0
+        ? ((paymentStats.succeeded / paymentStats.total) * 100).toFixed(2)
+        : "0",
+      paymentStats: {
+        total: paymentStats?.total ?? 0,
+        succeeded: paymentStats?.succeeded ?? 0,
+        failed: paymentStats?.failed ?? 0,
+      },
+    };
+  }),
+
+  /**
+   * Get revenue history for the last 12 months
+   */
+  getRevenueHistory: adminProcedure.query(async () => {
+    const now = new Date();
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const monthlyRevenue = await db
+      .select({
+        month: sql<string>`to_char(${payments.createdAt}, 'YYYY-MM')`,
+        revenue: sql<number>`coalesce(sum(${payments.amount}), 0)::numeric`,
+        count: sql<number>`count(*)::int`,
+        newSubscribers: sql<number>`count(distinct ${payments.userId})::int`,
+      })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.status, "SUCCEEDED"),
+          gte(payments.createdAt, twelveMonthsAgo)
+        )
+      )
+      .groupBy(sql`to_char(${payments.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${payments.createdAt}, 'YYYY-MM')`);
+
+    // Fill in missing months with 0
+    const data: { month: string; revenue: number; count: number; newSubscribers: number }[] = [];
+    const current = new Date(twelveMonthsAgo);
+
+    while (current <= now) {
+      const monthStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+      const found = monthlyRevenue.find((r) => r.month === monthStr);
+      data.push({
+        month: monthStr,
+        revenue: Number(found?.revenue ?? 0),
+        count: found?.count ?? 0,
+        newSubscribers: found?.newSubscribers ?? 0,
+      });
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return data;
+  }),
+
+  /**
+   * Get recent payment transactions
+   */
+  getRecentPayments: adminProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(20),
+    }).optional())
+    .query(async ({ input }) => {
+      const limit = input?.limit ?? 20;
+
+      const recentPayments = await db
+        .select({
+          id: payments.id,
+          xenditId: payments.xenditId,
+          referenceId: payments.referenceId,
+          amount: payments.amount,
+          currency: payments.currency,
+          status: payments.status,
+          billingPeriod: payments.billingPeriod,
+          channelCode: payments.channelCode,
+          failureCode: payments.failureCode,
+          createdAt: payments.createdAt,
+          userId: payments.userId,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(payments)
+        .innerJoin(users, eq(users.id, payments.userId))
+        .orderBy(desc(payments.createdAt))
+        .limit(limit);
+
+      return recentPayments;
+    }),
 });
