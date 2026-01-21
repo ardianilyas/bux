@@ -8,6 +8,7 @@ import { announcementRouter } from "@/features/announcements/api/announcement.ro
 import { subscriptionRouter } from "@/features/subscriptions/api/subscription.router";
 import { ticketRouter } from "@/features/tickets/api/ticket.router";
 import { analyticsRouter } from "@/features/analytics/api/analytics.router";
+import { healthScoreRouter } from "@/features/analytics/api/health-score.router";
 import { auditRouter } from "@/features/audit/api/audit.router";
 import { savingsRouter } from "@/features/savings/api/savings.router";
 import { featureToggleRouter } from "@/features/feature-toggles/api/feature-toggle.router";
@@ -23,6 +24,7 @@ export const appRouter = createTRPCRouter({
   subscription: subscriptionRouter,
   ticket: ticketRouter,
   analytics: analyticsRouter,
+  healthScore: healthScoreRouter,
   audit: auditRouter,
   savings: savingsRouter,
   featureToggle: featureToggleRouter,

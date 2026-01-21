@@ -3,6 +3,8 @@
 // Components
 export { AdminDashboardView } from "./components/admin-dashboard-view";
 export { SubscriptionIncomeView } from "./components/subscription-income-view";
+export { HealthScoreView } from "./components/health-score-view";
+export { HealthScoreWidget } from "./components/health-score-widget";
 
 // Hooks
 export {
@@ -11,6 +13,4 @@ export {
   useExpenseTrends,
   useRecentActivity,
 } from "./hooks/use-analytics";
-
-// Router (for server-side import only)
-export { analyticsRouter } from "./api/analytics.router";
+export { useHealthScore } from "./hooks/use-health-score";

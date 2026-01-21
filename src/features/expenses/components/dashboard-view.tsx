@@ -14,6 +14,7 @@ import { UpcomingBillsCard } from "@/features/subscriptions/components/upcoming-
 import { PinnedGoalsSection } from "@/features/savings/components/pinned-goals-section";
 import { PrivacySensitive } from "@/components/privacy-sensitive";
 import { DashboardBudgetOverview } from "@/features/budgets/components/dashboard-budget-overview";
+import { HealthScoreWidget } from "@/features/analytics";
 
 const formatDate = (date: Date | string) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -170,7 +171,7 @@ export function DashboardView() {
       </div>
 
       {/* Insights */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
         <Card className={`overflow-hidden border ${monthlyChange >= 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50'}`}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -248,6 +249,9 @@ export function DashboardView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Health Score Widget */}
+        <HealthScoreWidget />
       </div>
 
       {/* Main Content Grid */}
