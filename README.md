@@ -4,21 +4,21 @@ A modern, full-stack expense tracking application built with Next.js 16, featuri
 
 ## Features
 
-- 💰 **Expense Management** - Track expenses with categories, dates, and descriptions
-- 🏷️ **Category System** - Organize expenses with customizable color-coded categories
-- 📊 **Budget Tracking** - Set monthly budgets per category with visual progress indicators
-- 🔄 **Subscriptions** - Track recurring subscriptions with auto-expense generation
-- 🧾 **Receipt Scanning** - Upload receipts and extract expense data with AI/OCR
-- 📢 **Announcements** - Admin-managed global announcements for users
-- 👥 **User Management** - Admin dashboard for managing users and roles
-- 🌍 **Multi-currency Support** - Set base currency, track expenses in any currency with real-time exchange rates
-- 🎟️ **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
-- � **Admin Analytics Dashboard** - Visual charts for user growth, expense volume, and system stats
-- 📋 **Audit Logs** - Comprehensive security audit trail with IP address and user agent tracking
-- � **Authentication** - Secure email/password authentication with Better Auth
-- 📤 **CSV Export** - Export expense data for external analysis
-- 🎨 **Modern UI** - Beautiful, responsive interface with Shadcn UI components
-- 🌙 **Dark Mode** - Built-in theme switching
+- **Expense Management** - Track expenses with categories, dates, and descriptions
+- **Category System** - Organize expenses with customizable color-coded categories
+- **Budget Tracking** - Set monthly budgets per category with visual progress indicators
+- **Subscriptions** - Track recurring subscriptions with auto-expense generation
+- **Receipt Scanning** - Upload receipts and extract expense data with AI/OCR
+- **Announcements** - Admin-managed global announcements for users
+- **User Management** - Admin dashboard for managing users and roles
+- **Multi-currency Support** - Set base currency, track expenses in any currency with real-time exchange rates
+- **Ticket Support System** - Users can create support tickets; admins can manage, assign, and respond
+- **Admin Analytics Dashboard** - Visual charts for user growth, expense volume, and system stats
+- **Audit Logs** - Comprehensive security audit trail with IP address and user agent tracking
+- **Authentication** - Secure email/password authentication with Better Auth
+- **CSV Export** - Export expense data for external analysis
+- **Modern UI** - Beautiful, responsive interface with Shadcn UI components
+- **Dark Mode** - Built-in theme switching
 
 ## Tech Stack
 
