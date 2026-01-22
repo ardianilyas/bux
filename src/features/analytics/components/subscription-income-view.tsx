@@ -17,13 +17,23 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Bar, BarChart, CartesianGrid } from "recharts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { PaymentDetailsDialog, type PaymentDetail } from "./payment-details-dialog";
+import { Eye, Smartphone, CreditCard as CreditCardIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function SubscriptionIncomeView() {
   const { data: incomeStats, isLoading: isLoadingStats } = trpc.analytics.getSubscriptionIncome.useQuery();
   const { data: revenueHistory, isLoading: isLoadingHistory } = trpc.analytics.getRevenueHistory.useQuery();
   const { data: recentPayments, isLoading: isLoadingPayments } = trpc.analytics.getRecentPayments.useQuery({ limit: 10 });
+
+  const [selectedPayment, setSelectedPayment] = useState<PaymentDetail | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -52,17 +62,53 @@ export function SubscriptionIncomeView() {
     return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" }).format(date);
   };
 
+  const handleViewDetails = (payment: any) => {
+    // Adapter to match PaymentDetail type if needed
+    setSelectedPayment({
+      id: payment.id,
+      amount: payment.amount,
+      status: payment.status,
+      billingPeriod: payment.billingPeriod,
+      channelCode: payment.channelCode,
+      referenceId: payment.referenceId,
+      createdAt: payment.createdAt,
+      userName: payment.userName,
+      userEmail: payment.userEmail,
+      metadata: {
+        xenditId: payment.xenditId,
+        failureCode: payment.failureCode
+      }
+    });
+    setIsDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl">
       {/* Header with gradient */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-emerald-500/5 to-teal-500/5 rounded-3xl blur-3xl" />
+        <div className="absolute inset-0 bg-linear-to-r from-green-500/5 via-emerald-500/5 to-teal-500/5 rounded-3xl blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25">
+            <div className="p-2 rounded-lg bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25">
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Revenue Analytics
+            </h1>
+          </div>
+          <p className="text-muted-foreground ml-14">Track subscription income and payment metrics</p>
+        </div>
+      </div>
+
+      {/* Header with gradient */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-linear-to-r from-green-500/5 via-emerald-500/5 to-teal-500/5 rounded-3xl blur-3xl" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25">
+              <BarChart3 className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Revenue Analytics
             </h1>
           </div>
@@ -74,10 +120,10 @@ export function SubscriptionIncomeView() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Revenue */}
         <Card className="border-2 hover:border-green-500/20 transition-colors overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
+            <div className="p-2 rounded-lg bg-linear-to-br from-green-500 to-emerald-600">
               <DollarSign className="h-4 w-4 text-white" />
             </div>
           </CardHeader>
@@ -86,7 +132,7 @@ export function SubscriptionIncomeView() {
               <Skeleton className="h-8 w-32" />
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                   {formatCurrency(incomeStats?.totalRevenue ?? 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -100,10 +146,10 @@ export function SubscriptionIncomeView() {
 
         {/* MRR */}
         <Card className="border-2 hover:border-blue-500/20 transition-colors overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600">
+            <div className="p-2 rounded-lg bg-linear-to-br from-blue-500 to-cyan-600">
               <TrendingUp className="h-4 w-4 text-white" />
             </div>
           </CardHeader>
@@ -112,7 +158,7 @@ export function SubscriptionIncomeView() {
               <Skeleton className="h-8 w-32" />
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   {formatCurrency(incomeStats?.mrr ?? 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -126,10 +172,10 @@ export function SubscriptionIncomeView() {
 
         {/* This Month Revenue */}
         <Card className="border-2 hover:border-purple-500/20 transition-colors overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600">
+            <div className="p-2 rounded-lg bg-linear-to-br from-purple-500 to-pink-600">
               <Calendar className="h-4 w-4 text-white" />
             </div>
           </CardHeader>
@@ -138,7 +184,7 @@ export function SubscriptionIncomeView() {
               <Skeleton className="h-8 w-32" />
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   {formatCurrency(incomeStats?.monthRevenue ?? 0)}
                 </div>
                 <div className="flex items-center gap-1 mt-1">
@@ -162,10 +208,10 @@ export function SubscriptionIncomeView() {
 
         {/* Active Subscribers */}
         <Card className="border-2 hover:border-amber-500/20 transition-colors overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium">Active Pro Users</CardTitle>
-            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
+            <div className="p-2 rounded-lg bg-linear-to-br from-amber-500 to-orange-600">
               <Users className="h-4 w-4 text-white" />
             </div>
           </CardHeader>
@@ -174,7 +220,7 @@ export function SubscriptionIncomeView() {
               <Skeleton className="h-8 w-32" />
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                <div className="text-2xl font-bold bg-linear-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
                   {incomeStats?.activeProSubscribers ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -193,7 +239,7 @@ export function SubscriptionIncomeView() {
         <Card className="col-span-4 border-2">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-purple-600">
+              <div className="p-2 rounded-lg bg-linear-to-br from-primary to-purple-600">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -267,7 +313,7 @@ export function SubscriptionIncomeView() {
         <Card className="col-span-3 border-2">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600">
+              <div className="p-2 rounded-lg bg-linear-to-br from-green-500 to-emerald-600">
                 <CreditCard className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -331,7 +377,7 @@ export function SubscriptionIncomeView() {
       <Card className="border-2">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600">
+            <div className="p-2 rounded-lg bg-linear-to-br from-blue-500 to-cyan-600">
               <CreditCard className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -348,53 +394,98 @@ export function SubscriptionIncomeView() {
               ))}
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="w-[250px] pl-6 h-12">User</TableHead>
+                    <TableHead className="h-12">Amount</TableHead>
+                    <TableHead className="h-12">Period</TableHead>
+                    <TableHead className="h-12">Method</TableHead>
+                    <TableHead className="h-12">Status</TableHead>
+                    <TableHead className="h-12">Date</TableHead>
+                    <TableHead className="w-[50px] h-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentPayments && recentPayments.length > 0 ? (
                     recentPayments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{payment.userName}</p>
-                            <p className="text-xs text-muted-foreground">{payment.userEmail}</p>
+                      <TableRow key={payment.id} className="group hover:bg-muted/30 border-b border-border/40 last:border-0 transition-colors">
+                        <TableCell className="pl-6 py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9 border border-border/50">
+                              <AvatarImage src={`https://avatar.vercel.sh/${payment.userEmail}`} alt={payment.userName || "User"} />
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
+                                {payment.userName?.slice(0, 2).toUpperCase() || "UN"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm text-foreground">{payment.userName}</span>
+                              <span className="text-[11px] text-muted-foreground">{payment.userEmail}</span>
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-mono font-medium text-foreground py-3">
                           {formatCurrency(payment.amount)}
                         </TableCell>
-                        <TableCell>
-                          <span className="capitalize">{payment.billingPeriod ?? "N/A"}</span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{payment.channelCode ?? "N/A"}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={payment.status === "SUCCEEDED" ? "default" : payment.status === "FAILED" ? "destructive" : "secondary"}
-                          >
-                            {payment.status}
+                        <TableCell className="py-3">
+                          <Badge variant="secondary" className="font-normal capitalize bg-muted text-muted-foreground hover:bg-muted">
+                            {payment.billingPeriod ?? "N/A"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {payment.channelCode?.toLowerCase().includes("card") ? (
+                              <CreditCardIcon className="h-4 w-4" />
+                            ) : (
+                              <Smartphone className="h-4 w-4" />
+                            )}
+                            <span className="capitalize">{payment.channelCode ?? "N/A"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <div className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                            payment.status === "SUCCEEDED" 
+                              ? "bg-green-500/15 text-green-700 dark:text-green-400" 
+                              : payment.status === "FAILED"
+                                ? "bg-red-500/15 text-red-700 dark:text-red-400"
+                                : "bg-gray-500/15 text-gray-700 dark:text-gray-400"
+                          )}>
+                            <span className={cn(
+                              "mr-1.5 h-1.5 w-1.5 rounded-full",
+                              payment.status === "SUCCEEDED" 
+                                ? "bg-green-600 dark:bg-green-400" 
+                                : payment.status === "FAILED"
+                                  ? "bg-red-600 dark:bg-red-400"
+                                  : "bg-gray-600 dark:bg-gray-400"
+                            )} />
+                            {payment.status}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground py-3">
                           {formatDate(payment.createdAt)}
+                        </TableCell>
+                        <TableCell className="py-3 pr-4">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleViewDetails(payment)}
+                          >
+                            <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            <span className="sr-only">View Details</span>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No payment transactions found
+                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                           <CreditCardIcon className="h-8 w-8 opacity-20" />
+                           <p>No payment transactions found</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -404,6 +495,14 @@ export function SubscriptionIncomeView() {
           )}
         </CardContent>
       </Card>
+
+      <PaymentDetailsDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        payment={selectedPayment}
+        userBaseCurrency="IDR" // Defaulting to IDR for admin view or could fetch admin pref
+      />
     </div>
   );
 }
+
