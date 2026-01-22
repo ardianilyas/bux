@@ -617,8 +617,10 @@ export default function DashboardLayout({
                 align="start"
                 className="w-56"
               >
-                <DropdownMenuItem className="text-muted-foreground">
-                  Profile Settings
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings?tab=profile" className="w-full cursor-pointer">
+                    Profile Settings
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

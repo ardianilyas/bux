@@ -26,12 +26,33 @@ export function BudgetCard({
   const percent = Math.min((spent / budget.amount) * 100, 100);
   const overBudget = spent > budget.amount;
 
+  // Determine color status
+  let statusColor = "bg-green-500";
+  let statusTextColor = "text-green-600 dark:text-green-400";
+  let statusBadgeBg = "bg-green-100 dark:bg-green-900/30";
+  let statusText = "On Track";
+
+  if (percent >= 100) {
+    statusColor = "bg-red-500";
+    statusTextColor = "text-red-600 dark:text-red-400";
+    statusBadgeBg = "bg-red-100 dark:bg-red-900/30";
+    statusText = "Over Budget";
+  } else if (percent >= 85) {
+    statusColor = "bg-amber-500";
+    statusTextColor = "text-amber-600 dark:text-amber-400";
+    statusBadgeBg = "bg-amber-100 dark:bg-amber-900/30";
+    statusText = "Near Limit";
+  }
+
   return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="hover:border-primary/50 transition-colors group relative overflow-hidden">
+      {/* Decorative top border based on status */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${statusColor}`} />
+
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-6">
         <div className="flex items-center gap-3">
           <div
-            className="h-10 w-10 rounded-lg flex items-center justify-center"
+            className="h-10 w-10 rounded-lg flex items-center justify-center shadow-sm"
             style={{ backgroundColor: budget.category.color }}
           >
             <svg
@@ -50,48 +71,54 @@ export function BudgetCard({
             </svg>
           </div>
           <div>
-            <CardTitle className="text-lg text-foreground">
+            <CardTitle className="text-lg text-foreground flex items-center gap-2">
               {budget.category.name}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {formatCurrency(budget.amount, userBaseCurrency)} / month
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              {formatCurrency(budget.amount, userBaseCurrency)} Limit
             </p>
           </div>
+        </div>
+        <div className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusBadgeBg} ${statusTextColor}`}>
+          {statusText}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-muted-foreground">
-              {formatCurrency(spent, userBaseCurrency)} spent
+          <div className="flex justify-between text-sm mb-2 font-medium">
+            <span className="text-foreground">
+              {formatCurrency(spent, userBaseCurrency)}
             </span>
             <span
               className={
                 overBudget
-                  ? "text-red-500 font-medium"
+                  ? "text-red-500"
                   : "text-muted-foreground"
               }
             >
-              {overBudget
-                ? `${formatCurrency(spent - budget.amount, userBaseCurrency)} over`
-                : `${formatCurrency(budget.amount - spent, userBaseCurrency)} left`}
+              {Math.round(percent)}%
             </span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all ${getProgressColor(percent)}`}
+              className={`h-full transition-all duration-500 ease-out ${statusColor}`}
               style={{ width: `${percent}%` }}
             />
           </div>
+          <p className="text-xs text-muted-foreground mt-2 text-right">
+            {overBudget
+              ? `${formatCurrency(spent - budget.amount, userBaseCurrency)} over`
+              : `${formatCurrency(budget.amount - spent, userBaseCurrency)} remaining`}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => onEdit(budget)}>
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button variant="outline" size="sm" onClick={() => onEdit(budget)} className="flex-1 h-8">
             Edit
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="text-red-500 hover:text-red-600"
+            className="flex-1 h-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800"
             onClick={() => onDelete(budget.id)}
             disabled={isDeleting}
           >

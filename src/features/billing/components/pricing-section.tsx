@@ -46,12 +46,7 @@ const PRO_FEATURES: PricingFeature[] = [
 // ==================== Price Formatter ====================
 
 function formatPrice(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return "Rp" + amount.toLocaleString("id-ID");
 }
 
 // ==================== Component ====================

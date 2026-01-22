@@ -4,15 +4,14 @@ import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-auth";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell,
   Area, AreaChart, PieChart, Pie, Legend
 } from "recharts";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Store, TrendingUp, CreditCard, ShoppingBag, PieChart as PieChartIcon, Calendar as CalendarIcon, Wallet, Lock } from "lucide-react";
+import { Store, TrendingUp, PieChart as PieChartIcon, Calendar as CalendarIcon, Wallet, Lock } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -20,12 +19,15 @@ import { PLAN_TYPES } from "@/features/billing/lib/billing-constants";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { subDays, format, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
+import { usePrivacyStore } from "@/store/use-privacy-store";
 
 export function InsightsView() {
   const { data: session } = useSession();
   const router = useRouter();
   const userBaseCurrency = (session?.user as any)?.currency || "IDR";
   const { theme } = useTheme();
+  const { isPrivacyMode } = usePrivacyStore();
+  const privacyClass = isPrivacyMode ? "blur-md select-none" : "";
 
   const { data: subscription } = trpc.billing.getStatus.useQuery();
   const isPro = subscription?.plan === PLAN_TYPES.PRO;
@@ -99,7 +101,7 @@ export function InsightsView() {
           <p className="font-semibold text-foreground mb-1">{label}</p>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">Total:</span>
-            <span className="font-medium font-mono text-foreground">
+            <span className={cn("font-medium font-mono text-foreground", privacyClass)}>
               {formatCurrency(payload[0].value, userBaseCurrency)}
             </span>
           </div>
@@ -147,17 +149,17 @@ export function InsightsView() {
         )}
 
         {/* Content with conditional pointer-events to prevent interaction when locked */}
-        <div className={!isPro ? "filter blur-[4px] pointer-events-none select-none opacity-50 transition-all duration-500" : ""}>
+        <div className={!isPro ? "blur-xs pointer-events-none select-none opacity-50 transition-all duration-500" : ""}>
           <div className="space-y-6">
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-              <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 shadow-sm transition-all hover:shadow-md">
+              <Card className="bg-linear-to-br from-primary/10 to-transparent border-primary/20 shadow-sm transition-all hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
                   <Wallet className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold font-mono tracking-tight">
+                  <div className={cn("text-2xl font-bold font-mono tracking-tight", privacyClass)}>
                     {formatCurrency(totalSpend, userBaseCurrency)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -174,7 +176,7 @@ export function InsightsView() {
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold font-mono tracking-tight">
+                  <div className={cn("text-2xl font-bold font-mono tracking-tight", privacyClass)}>
                     {formatCurrency(avgDailySpend, userBaseCurrency)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -192,7 +194,7 @@ export function InsightsView() {
                   <div className="text-2xl font-bold truncate" title={topCategory?.name}>
                     {topCategory?.name || "No data"}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className={cn("text-xs text-muted-foreground mt-1", privacyClass)}>
                     {topCategory ? formatCurrency(topCategory.amount, userBaseCurrency) : "-"}
                   </p>
                 </CardContent>
@@ -334,7 +336,7 @@ export function InsightsView() {
                                 <span className="text-[10px] text-muted-foreground">{merchant.count} transactions</span>
                               </div>
                             </div>
-                            <div className="font-mono font-medium text-sm">
+                            <div className={cn("font-mono font-medium text-sm", privacyClass)}>
                               {formatCurrency(merchant.total, userBaseCurrency)}
                             </div>
                           </div>
